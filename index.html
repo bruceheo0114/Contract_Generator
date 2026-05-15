@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PR ONE | KOL 계약서 관리 도구 v14</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.2.2/build/index.umd.js"></script>
+<style>
+:root {
+  --navy:#1a2744; --navy-l:#253660; --navy-m:#2e4080;
+  --gold:#c8a96e; --gold-l:#e8d5a8;
+  --bg:#f4f5f7; --white:#fff; --border:#dde2ec;
+  --text:#1e2a45; --sub:#5c6a85; --light:#8a96ae;
+  --green:#2d8a5e; --green-l:#eaf5ef;
+  --red:#c0392b; --red-l:#fdecea;
+  --yellow:#d68910; --yellow-l:#fef9ec;
+  --blue:#2471a3; --blue-l:#eaf3fb;
+  --r:10px; --sh:0 2px 12px rgba(26,39,68,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:var(--navy);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+.h-title{color:#fff;font-size:15px;font-weight:600}.h-sub{color:#8899bb;font-size:12px}.h-badge{background:var(--gold);color:var(--navy);font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;letter-spacing:1.5px}
+.tabs{background:var(--navy-l);padding:0 28px;display:flex;gap:2px}
+.tab{padding:13px 20px;background:none;border:none;color:#8899bb;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:500;cursor:pointer;position:relative;transition:color .2s;white-space:nowrap}
+.tab::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--gold);border-radius:3px 3px 0 0;transform:scaleX(0);transition:transform .2s}
+.tab.active{color:#fff}.tab.active::after{transform:scaleX(1)}.tab:hover{color:#ccd6ee}
+.panel{display:none}.panel.active{display:block}
+.wrap{max-width:1300px;margin:0 auto;padding:24px 20px 60px}
+.sec-head{margin-bottom:18px}.sec-head h2{font-size:19px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:10px}
+.sec-head h2 .ico{width:31px;height:31px;background:var(--navy);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-size:15px;flex-shrink:0}
+.sec-head p{font-size:12.5px;color:var(--sub);margin-top:5px;padding-left:41px}
+.notice{border-radius:8px;padding:11px 15px;font-size:12.5px;line-height:1.7;display:flex;gap:9px;margin-bottom:18px}
+.n-warn{background:var(--yellow-l);color:#7a5500;border:1px solid #e8c860}
+.n-info{background:var(--blue-l);color:#1a4f7a;border:1px solid #a0c8e8}
+/* 2-col layout */
+.gen-grid{display:grid;grid-template-columns:420px 1fr;gap:18px;align-items:start}
+/* card */
+.card{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh)}
+.ch{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#f8f9fc;border-radius:var(--r) var(--r) 0 0}
+.ct{font-size:13px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px}.ct .dot{width:7px;height:7px;background:var(--gold);border-radius:50%}
+/* form */
+.fsec{border-radius:var(--r);border:1px solid var(--border);overflow:hidden;margin-bottom:14px}
+.fstitle{background:#f8f9fc;padding:9px 14px;font-size:11px;font-weight:700;color:var(--navy-m);letter-spacing:.8px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.fb{padding:14px;display:flex;flex-direction:column;gap:11px}
+.fr{display:flex;flex-direction:column;gap:4px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+label{font-size:11.5px;font-weight:600;color:var(--sub)}
+label .req{color:var(--red);margin-left:2px}
+label .hint{font-weight:400;color:var(--light);font-size:11px}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-family:'Noto Sans KR',sans-serif;font-size:13px;color:var(--text);background:var(--white);transition:border-color .15s,box-shadow .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--navy-m);box-shadow:0 0 0 3px rgba(46,64,128,.1)}
+textarea{resize:vertical;min-height:56px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235c6a85' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:28px}
+/* toggle */
+.toggle-row{display:flex;gap:0;border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
+.toggle-btn{flex:1;padding:9px 12px;background:var(--white);border:none;font-family:'Noto Sans KR',sans-serif;font-size:12.5px;font-weight:500;color:var(--sub);cursor:pointer;transition:all .15s;text-align:center}
+.toggle-btn.active{background:var(--navy);color:#fff;font-weight:700}
+.toggle-btn:first-child{border-right:1.5px solid var(--border)}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 18px;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy-m)}
+.btn-accent{background:var(--gold);color:var(--navy)}.btn-accent:hover{background:#b8965a}
+.btn-outline{background:var(--white);color:var(--navy);border:1.5px solid var(--border)}.btn-outline:hover{border-color:var(--navy-m);background:#f4f6fb}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#257a52}
+.btn-sm{padding:6px 13px;font-size:12px}.btn-lg{padding:12px 24px;font-size:14px}.btn-full{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+/* preview */
+.preview-card{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);position:sticky;top:76px}
+.prev-actions{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;background:#f8f9fc;border-radius:var(--r) var(--r) 0 0}
+.prev-body{padding:30px 34px;max-height:660px;overflow-y:auto;font-size:12px;line-height:1.9;color:#2a3550}
+.prev-body::-webkit-scrollbar{width:5px}.prev-body::-webkit-scrollbar-track{background:#f0f2f7}.prev-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* contract formatting */
+.c-title-table{width:100%;border-collapse:collapse;margin-bottom:18px}
+.c-title-table td{border:2px solid #222;padding:10px 16px;text-align:center;font-family:'Noto Serif KR',serif;font-size:15px;font-weight:600;color:var(--navy)}
+.c-date{font-size:12.5px;margin-bottom:5px;color:var(--sub)}
+.c-party{font-size:12.5px;font-weight:600;margin-bottom:3px}
+.c-intro{font-size:12px;line-height:1.85;margin:14px 0;text-align:justify}
+.c-divider{border:none;border-top:1px solid #ccc;margin:14px 0}
+.c-art-title{font-size:12.5px;font-weight:700;color:var(--navy);margin:14px 0 6px;padding-left:4px}
+.c-item{font-size:12px;padding:3px 0 3px 16px;line-height:1.8;display:flex;gap:8px}
+.c-item-n{flex-shrink:0;font-weight:600;color:var(--sub)}
+.c-sub{font-size:12px;padding:2px 0 2px 28px;line-height:1.8}
+.c-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11.5px}
+.c-table th{background:#f0f3fa;padding:7px 11px;border:1px solid #dde2ec;font-weight:600;color:var(--navy);text-align:left;white-space:nowrap}
+.c-table td{padding:7px 11px;border:1px solid #dde2ec}
+.hl{color:var(--navy-m);font-weight:600;background:#eef2ff;padding:1px 4px;border-radius:3px}
+.c-sign{margin-top:24px;padding-top:18px;border-top:1px solid var(--border)}
+.c-sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px}
+.c-party-block h4{font-size:12.5px;font-weight:700;color:var(--navy);border-bottom:1.5px solid var(--navy);padding-bottom:5px;margin-bottom:8px}
+.c-party-block p{font-size:12px;margin-bottom:3px}
+/* split payment */
+.split-block{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:8px}
+.split-header{background:#f0f4ff;padding:8px 12px;font-size:11px;font-weight:700;color:var(--navy-m);letter-spacing:.5px}
+.split-body{padding:12px;display:flex;flex-direction:column;gap:9px}
+/* reviewer */
+.rev-grid{display:grid;grid-template-columns:380px 1fr;gap:18px;align-items:start}
+/* upload zone */
+.upzone{border:2px dashed var(--border);border-radius:12px;padding:42px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:#fafbff;position:relative}
+.upzone:hover,.upzone.over{border-color:var(--navy-m);background:#f0f4ff}
+.upzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.up-icon{font-size:38px;margin-bottom:12px}
+.up-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:5px}
+.up-desc{font-size:12px;color:var(--sub);line-height:1.6}
+.fmt-badges{display:inline-flex;gap:6px;margin-top:12px}
+.fbadge{padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700}
+.bdocx{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+.bpdf{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}
+.file-loaded{border:2px solid var(--green);background:var(--green-l);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.fl-icon{font-size:28px;flex-shrink:0}
+.fl-name{font-size:13.5px;font-weight:700;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fl-meta{font-size:12px;color:var(--sub);margin-top:2px}
+.fl-preview{margin-top:10px;background:#fff;border:1px solid var(--border);border-radius:7px;padding:11px 13px;max-height:130px;overflow-y:auto;font-size:11.5px;line-height:1.7;color:var(--sub);white-space:pre-wrap}
+/* checklist results */
+.chk-table{width:100%;border-collapse:collapse;font-size:12px}
+.chk-table th{background:var(--navy);color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:11.5px}
+.chk-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.6}
+.chk-table tr:hover td{background:#f8f9fc}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-ok{background:var(--green-l);color:var(--green);border:1px solid #a0d8bc}
+.b-diff{background:var(--yellow-l);color:var(--yellow);border:1px solid #e8c860}
+.b-miss{background:var(--red-l);color:var(--red);border:1px solid #e0b0aa}
+.b-extra{background:var(--blue-l);color:var(--blue);border:1px solid #a0c8e8}
+.summary-box{background:var(--navy);color:#fff;border-radius:var(--r);padding:16px 20px;margin-bottom:18px}
+.summary-box h4{font-size:11px;color:var(--gold-l);letter-spacing:1px;margin-bottom:7px;font-weight:700}
+.score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.score-item{background:rgba(255,255,255,.08);border-radius:8px;padding:10px;text-align:center}
+.score-num{font-size:22px;font-weight:700;margin-bottom:2px}
+.score-label{font-size:10.5px;color:#aabbdd}
+/* spinner */
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-wrap{padding:38px;text-align:center;color:var(--sub)}
+.empty-state{text-align:center;padding:48px 18px;color:var(--light)}
+.empty-icon{font-size:40px;margin-bottom:11px;opacity:.5}
+.empty-state p{font-size:13px;line-height:1.6}
+/* misc */
+.flex{display:flex}.gap-8{gap:8px}.gap-10{gap:10px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+.flex-end{justify-content:flex-end}
+.hidden{display:none!important}
+@media(max-width:1050px){.gen-grid{grid-template-columns:1fr}.rev-grid{grid-template-columns:1fr}.c-sign-grid{grid-template-columns:1fr}}
+@media print{.header,.tabs,.sec-head,.form-wrap,.prev-actions{display:none!important}.gen-grid{display:block!important}.preview-card{position:static!important;border:none!important;box-shadow:none!important;max-width:720px;margin:0 auto}.prev-body{max-height:none!important;padding:20px 24px!important}body{background:#fff}}
+
+/* PR ONE company-style first page */
+.company-cover{background:#fff;min-height:1040px;padding:28px 28px 42px;border:1px solid #d7dce8;margin-bottom:22px;display:flex;flex-direction:column;justify-content:flex-start;page-break-after:always}
+.company-cover .c-title-table{width:80%;margin:92px 0 0 0}.company-cover .c-title-table td{font-family:'Noto Sans KR',sans-serif;font-size:17px;font-weight:700;padding:14px 18px;line-height:1.85;letter-spacing:-.2px}
+.cover-date-block{margin-top:170px}.cover-party-group{text-align:center;font-size:13.5px;line-height:2.05;margin-top:210px;margin-bottom:0}
+.company-cover .c-date{text-align:center;color:#1e2a45;font-size:13.5px;font-weight:500;margin:0;letter-spacing:0}.company-cover .c-party{font-size:13.5px;font-weight:500;margin:0;text-align:center;letter-spacing:0}
+.contract-body-page{background:#fff;border:1px solid #e0e5ef;padding:28px 28px 34px}
+.review-actions{display:flex;gap:8px;margin-left:auto;align-items:center}.review-check{width:22px;text-align:center}.annotated-doc{margin-top:18px;border:1px solid var(--border);border-radius:10px;background:#fbfcff;overflow:hidden}.annotated-head{padding:11px 14px;background:#f0f3fa;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--navy)}
+.annotated-clause{padding:12px 14px;border-bottom:1px solid #e7ebf3}.annotated-clause:last-child{border-bottom:none}.annotated-clause.ok{border-left:4px solid var(--green)}.annotated-clause.diff{border-left:4px solid var(--yellow)}.annotated-clause.miss{border-left:4px solid var(--red)}.annotated-clause.extra{border-left:4px solid var(--blue)}
+.ann-title{font-size:12px;font-weight:700;margin-bottom:6px}.ann-text{white-space:pre-wrap;font-size:11.5px;line-height:1.7;color:#38445f;max-height:150px;overflow:auto;background:#fff;border:1px solid #e4e8f0;border-radius:7px;padding:9px 10px}.fix-box{margin-top:8px;background:#fff8df;border:1px solid #ebce74;border-radius:7px;padding:9px 10px;font-size:11.5px;line-height:1.65;color:#6e4e00}.miss-box{background:#fff1f0;border-color:#e0aaa4;color:#8a2c22}.extra-box{background:#edf7ff;border-color:#a6cee8;color:#235b7a}
+.diff-text{background:#fff0b3;padding:1px 4px;border-radius:4px}.std-text{background:#dff5e8;padding:1px 4px;border-radius:4px}.pii-mask{background:#eef1f6;color:#6b7280;padding:1px 5px;border-radius:4px;font-size:11px}
+@media print{.company-cover{border:none;min-height:900px}.contract-body-page{border:none}}
+
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div><div class="h-title">KOL 계약서 관리 도구</div><div class="h-sub">PR ONE 팀 전용 · 내부 배포용</div></div>
+  <span class="h-badge">PR ONE</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('content',this)">📄 콘텐츠 계약서</button>
+  <button class="tab" onclick="switchTab('secondary',this)">📋 2차 활용 계약서</button>
+  <button class="tab" onclick="switchTab('review',this)">🔍 계약서 검토</button>
+</div>
+
+<!-- ═══════════ TAB 1: 콘텐츠 계약서 ═══════════ -->
+<div id="tab-content" class="panel active">
+<div class="wrap">
+<div class="sec-head"><h2><span class="ico">📄</span>콘텐츠 계약서 생성기</h2><p>개인/법인 구분 후 KOL별 정보를 입력하면 표준 양식 계약서가 생성됩니다. DOCX로 다운로드하면 Word에서 바로 사용 가능합니다.</p></div>
+
+<div class="gen-grid">
+<div class="form-wrap">
+
+<!-- 기본 정보 -->
+<div class="fsec">
+<div class="fstitle">📋 기본 정보</div>
+<div class="fb">
+  <div class="fr2">
+    <div class="fr"><label>계약 날짜 <span class="req">*</span></label><input type="date" id="c_date" oninput="rp()"></div>
+    <div class="fr"><label>채널 유형 <span class="req">*</span></label>
+      <select id="c_ch_type" oninput="rp()">
+        <option value="유튜브">유튜브</option>
+        <option value="인스타그램">인스타그램</option>
+        <option value="틱톡">틱톡</option>
+        <option value="블로그">블로그</option>
+        <option value="멀티채널">멀티채널</option>
+      </select>
+    </div>
+  </div>
+  <div class="fr">
+    <label>"을" 유형 <span class="req">*</span></label>
+    <div class="toggle-row">
+      <button class="toggle-btn active" id="btn-individual" onclick="setKolType('individual')">👤 개인 (인플루언서)</button>
+      <button class="toggle-btn" id="btn-corp" onclick="setKolType('corp')">🏢 법인 (사업자)</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- "을" 정보 -->
+<div class="fsec">
+<div class="fstitle" id="kol-section-title">👤 인플루언서 정보 ("을")</div>
+<div class="fb">
+  <!-- 개인 필드 -->
+  <div id="individual-fields">
+    <div class="fr2">
+      <div class="fr"><label>성명 <span class="req">*</span></label><input type="text" id="c_kol_name" placeholder="성명" oninput="rp()"></div>
+      <div class="fr"><label>채널명 <span class="req">*</span></label><input type="text" id="c_ch_name" placeholder="채널명" oninput="rp()"></div>
+    </div>
+    <div class="fr"><label>채널 URL <span class="req">*</span></label><input type="text" id="c_ch_url" placeholder="https://..." oninput="rp()"></div>
+    <div class="fr"><label>주소</label><input type="text" id="c_kol_addr" placeholder="주소" oninput="rp()"></div>
+    <div class="fr"><label>주민등록번호 <span class="hint">(계약서 기재용)</span></label><input type="text" id="c_kol_id" placeholder="000000-0000000" oninput="rp()"></div>
+  </div>
+  <!-- 법인 필드 -->
+  <div id="corp-fields" class="hidden">
+    <div class="fr2">
+      <div class="fr"><label>상호명 <span class="req">*</span></label><input type="text" id="c_corp_name" placeholder="㈜회사명" oninput="rp()"></div>
+      <div class="fr"><label>채널명 <span class="req">*</span></label><input type="text" id="c_ch_name_corp" placeholder="채널명" oninput="rp()"></div>
+    </div>
+    <div class="fr2">
+      <div class="fr"><label>사업자등록번호</label><input type="text" id="c_corp_biz" placeholder="000-00-00000" oninput="rp()"></div>
+      <div class="fr"><label>대표자명</label><input type="text" id="c_corp_ceo" placeholder="대표이사명" oninput="rp()"></div>
+    </div>
+    <div class="fr"><label>채널 URL <span class="req">*</span></label><input type="text" id="c_ch_url_corp" placeholder="https://..." oninput="rp()"></div>
+    <div class="fr"><label>주소</label><input type="text" id="c_corp_addr" placeholder="주소" oninput="rp()"></div>
+    <div class="fr2">
+      <div class="fr"><label>출연자명 <span class="hint">(있는 경우)</span></label><input type="text" id="c_performer" placeholder="출연자명" oninput="rp()"></div>
+      <div class="fr"><label>소속사 <span class="hint">(있는 경우)</span></label><input type="text" id="c_agency" placeholder="소속사명" oninput="rp()"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 콘텐츠 정보 -->
+<div class="fsec">
+<div class="fstitle">🎬 콘텐츠 정보</div>
+<div class="fb">
+  <div class="fr2">
+    <div class="fr"><label>광고 제품명 <span class="req">*</span></label><input type="text" id="c_product" placeholder="광고 제품명" oninput="rp()"></div>
+    <div class="fr"><label>브랜드명</label><input type="text" id="c_brand" placeholder="브랜드명" oninput="rp()"></div>
+  </div>
+  <div class="fr2">
+    <div class="fr"><label>업로드 일시 <span class="req">*</span></label><input type="text" id="c_upload_date" placeholder="2026년 5월 25일(월)" oninput="rp()"></div>
+    <div class="fr"><label>진행방식/횟수 <span class="req">*</span></label><input type="text" id="c_upload_count" placeholder="브랜디드 롱폼 1회" oninput="rp()"></div>
+  </div>
+  <div class="fr2">
+    <div class="fr"><label>콘텐츠 유지 기간 <span class="hint">(개월)</span></label><input type="number" id="c_keep_mo" value="6" min="1" oninput="rp()"></div>
+    <div class="fr"><label>2차 활용 조건</label><input type="text" id="c_secondary" value="추후 협의" oninput="rp()"></div>
+  </div>
+  <!-- 경쟁사 제한 -->
+  <div class="fr">
+    <label>경쟁사 광고 제한</label>
+    <div class="toggle-row" style="margin-top:4px">
+      <button class="toggle-btn active" id="btn-restrict-on" onclick="setRestrict(true)">🚫 제한 있음</button>
+      <button class="toggle-btn" id="btn-restrict-off" onclick="setRestrict(false)">✅ 제한 없음</button>
+    </div>
+  </div>
+  <div id="restrict-fields" class="fr2">
+    <div class="fr"><label>제한 기간 <span class="hint">(개월)</span></label><input type="number" id="c_restrict_mo" value="3" min="1" oninput="rp()"></div>
+    <div class="fr"><label>제한 카테고리</label><input type="text" id="c_restrict_cat" value="다이어트 건강기능식품" oninput="rp()"></div>
+  </div>
+</div>
+</div>
+
+<!-- 대금 정보 -->
+<div class="fsec">
+<div class="fstitle" id="pay-section-title">💰 대금 정보 (개인 · 원천징수)</div>
+<div class="fb">
+  <div class="fr2">
+    <div class="fr"><label>대금 (숫자) <span class="req">*</span></label><input type="text" id="c_amount" placeholder="금액 입력" oninput="syncKor('c_amount','c_amount_kor');rp()"></div>
+    <div class="fr"><label>대금 (한글) <span class="req">*</span></label><input type="text" id="c_amount_kor" placeholder="일천삼백만원" oninput="rp()"></div>
+  </div>
+  <!-- 개인: 단순 지급 -->
+  <div id="pay-individual">
+    <div class="fr"><label>지급 조건 <span class="hint">(기본: 업로드 후 익월말)</span></label><input type="text" id="c_pay_cond" value="최종 콘텐츠 업로드 후 익월 말일 이내" oninput="rp()"></div>
+  </div>
+  <!-- 법인: VAT + 일시/분할 -->
+  <div id="pay-corp" class="hidden">
+    <div class="fr" style="margin-bottom:6px">
+      <label>지급 방식</label>
+      <div class="toggle-row" style="margin-top:4px">
+        <button class="toggle-btn active" id="btn-pay-lump" onclick="setPayType('lump')">일시불</button>
+        <button class="toggle-btn" id="btn-pay-split" onclick="setPayType('split')">분할 (선금/잔금)</button>
+      </div>
+    </div>
+    <!-- 일시불 -->
+    <div id="pay-lump-block">
+      <div class="fr"><label>지급 조건 <span class="hint">(기본: 세금계산서 발행 후 익월말)</span></label><input type="text" id="c_pay_lump_cond" value="세금계산서 발행일로부터 익월 말 이내" oninput="rp()"></div>
+    </div>
+    <!-- 분할 -->
+    <div id="pay-split-block" class="hidden">
+      <div class="split-block">
+        <div class="split-header">선금</div>
+        <div class="split-body">
+          <div class="fr2">
+            <div class="fr"><label>선금 비율 (%)</label><input type="number" id="c_s1_pct" value="30" min="0" max="100" oninput="syncSplit();rp()"></div>
+            <div class="fr"><label>선금 금액 (자동계산)</label><input type="text" id="c_s1_amt" placeholder="자동계산" readonly style="background:#f8f9fc"></div>
+          </div>
+          <div class="fr"><label>세금계산서 발행 시점</label><input type="text" id="c_s1_tax_date" placeholder="예: 계약일자" oninput="rp()"></div>
+          <div class="fr"><label>지급 조건</label><input type="text" id="c_s1_cond" value="세금계산서 발행일로부터 익월 말 이내" oninput="rp()"></div>
+        </div>
+      </div>
+      <div class="split-block" style="margin-top:8px">
+        <div class="split-header">잔금</div>
+        <div class="split-body">
+          <div class="fr2">
+            <div class="fr"><label>잔금 비율 (%)</label><input type="number" id="c_s2_pct" value="70" min="0" max="100" readonly style="background:#f8f9fc"></div>
+            <div class="fr"><label>잔금 금액 (자동계산)</label><input type="text" id="c_s2_amt" placeholder="자동계산" readonly style="background:#f8f9fc"></div>
+          </div>
+          <div class="fr"><label>세금계산서 발행 시점</label><input type="text" id="c_s2_tax_date" placeholder="예: 업로드일자" oninput="rp()"></div>
+          <div class="fr"><label>지급 조건</label><input type="text" id="c_s2_cond" value="세금계산서 발행일로부터 익월 말 이내" oninput="rp()"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 계좌 -->
+  <div class="fr3">
+    <div class="fr"><label>은행명</label><input type="text" id="c_bank" placeholder="은행명" oninput="rp()"></div>
+    <div class="fr"><label>계좌번호</label><input type="text" id="c_account" placeholder="계좌번호" oninput="rp()"></div>
+    <div class="fr"><label>예금주명</label><input type="text" id="c_depositor" placeholder="예금주" oninput="rp()"></div>
+  </div>
+</div>
+</div>
+
+<!-- 위약금 -->
+<div class="fsec">
+<div class="fstitle">⚖️ 위약금 (갑 귀책 해지 시)</div>
+<div class="fb">
+  <div class="fr2">
+    <div class="fr"><label>기획안 전달 후</label>
+      <select id="c_pen1" oninput="rp()"><option value="50">50%</option><option value="30">30%</option><option value="100">100%</option></select>
+    </div>
+    <div class="fr"><label>콘텐츠 초안/제작 후</label>
+      <select id="c_pen2" oninput="rp()"><option value="100">100%</option><option value="70">70%</option><option value="50">50%</option></select>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="flex gap-8 mt-16">
+  <button class="btn btn-primary btn-lg" style="flex:1" onclick="downloadDocx('content')">⬇ DOCX 다운로드</button>
+  <button class="btn btn-outline btn-lg" onclick="window.print()">🖨 인쇄</button>
+</div>
+
+</div><!-- /form-wrap -->
+
+<!-- PREVIEW -->
+<div class="preview-card">
+  <div class="prev-actions">
+    <span class="ct"><span class="dot"></span>계약서 미리보기</span>
+    <div class="flex gap-8" style="margin-left:auto">
+      <button class="btn btn-sm btn-outline" onclick="copyPreview()">📋 텍스트 복사</button>
+      <button class="btn btn-sm btn-outline" onclick="resetForm('content')">↺ 초기화</button>
+    </div>
+  </div>
+  <div class="prev-body" id="preview-content"></div>
+</div>
+
+</div><!-- /gen-grid -->
+</div>
+</div>
+
+<!-- ═══════════ TAB 2: 2차 활용 계약서 ═══════════ -->
+<div id="tab-secondary" class="panel">
+<div class="wrap">
+<div class="sec-head"><h2><span class="ico">📋</span>2차 활용 라이선스 계약서</h2><p>브랜디드 영상 2차 활용을 위한 별도 계약서입니다. 법인/소속사 대상으로 진행합니다.</p></div>
+
+<div class="gen-grid">
+<div class="form-wrap">
+
+<div class="fsec">
+<div class="fstitle">📋 기본 정보</div>
+<div class="fb">
+  <div class="fr2">
+    <div class="fr"><label>계약 날짜 <span class="req">*</span></label><input type="date" id="s_date" oninput="rps()"></div>
+    <div class="fr"><label>출연자명 <span class="req">*</span></label><input type="text" id="s_performer" placeholder="출연자명" oninput="rps()"></div>
+  </div>
+</div>
+</div>
+
+<div class="fsec">
+<div class="fstitle">🏢 "을" 정보 (소속사/저작권사)</div>
+<div class="fb">
+  <div class="fr2">
+    <div class="fr"><label>상호명 <span class="req">*</span></label><input type="text" id="s_corp" placeholder="예: 에이오엠지㈜" oninput="rps()"></div>
+    <div class="fr"><label>대표이사</label><input type="text" id="s_ceo" placeholder="대표이사명" oninput="rps()"></div>
+  </div>
+  <div class="fr"><label>주소</label><input type="text" id="s_addr" placeholder="주소" oninput="rps()"></div>
+  <div class="fr"><label>사업자등록번호</label><input type="text" id="s_biz" placeholder="000-00-00000" oninput="rps()"></div>
+  <div class="fr2">
+    <div class="fr"><label>채널명</label><input type="text" id="s_channel" placeholder="채널명" oninput="rps()"></div>
+    <div class="fr"><label>채널 내 출연자명칭 <span class="hint">(닉네임 등)</span></label><input type="text" id="s_performer_alias" placeholder="출연자명" oninput="rps()"></div>
+  </div>
+</div>
+</div>
+
+<div class="fsec">
+<div class="fstitle">🎬 활용 콘텐츠</div>
+<div class="fb">
+  <div class="fr"><label>활용 콘텐츠명 <span class="req">*</span></label><input type="text" id="s_content_name" placeholder="활용 콘텐츠명" oninput="rps()"></div>
+  <div class="fr2">
+    <div class="fr"><label>활용 시작일 <span class="req">*</span></label><input type="date" id="s_start" oninput="rps()"></div>
+    <div class="fr"><label>활용 종료일 <span class="req">*</span></label><input type="date" id="s_end" oninput="rps()"></div>
+  </div>
+  <div class="fr"><label>활용 채널</label><input type="text" id="s_use_channel" value="디지털 전 매체(메타, 구글 등)" oninput="rps()"></div>
+  <div class="fr"><label>사용 범위</label><input type="text" id="s_scope" value="출연자의 초상권, 음성권, 성명권" oninput="rps()"></div>
+  <div class="fr"><label>커머스 사용</label>
+    <select id="s_commerce" oninput="rps()">
+      <option value="불가">불가 (썸네일, 상세페이지 등 구매연관 사용 제외)</option>
+      <option value="가능">가능</option>
+      <option value="협의">별도 협의</option>
+    </select>
+  </div>
+</div>
+</div>
+
+<div class="fsec">
+<div class="fstitle">💰 대금 (VAT 별도)</div>
+<div class="fb">
+  <div class="fr2">
+    <div class="fr"><label>대금 (숫자) <span class="req">*</span></label><input type="text" id="s_amount" placeholder="금액 입력" oninput="syncKor('s_amount','s_amount_kor');rps()"></div>
+    <div class="fr"><label>대금 (한글) <span class="req">*</span></label><input type="text" id="s_amount_kor" placeholder="삼천오백만원" oninput="rps()"></div>
+  </div>
+  <div class="fr"><label>세금계산서 발행 시점</label><input type="text" id="s_tax_date" value="2차 활용 시작일 기준" oninput="rps()"></div>
+  <div class="fr"><label>지급 조건</label><input type="text" id="s_pay_cond" value="세금계산서 수령 후 30일 내" oninput="rps()"></div>
+  <div class="fr3">
+    <div class="fr"><label>은행명</label><input type="text" id="s_bank" placeholder="은행명" oninput="rps()"></div>
+    <div class="fr"><label>계좌번호</label><input type="text" id="s_account" placeholder="계좌번호" oninput="rps()"></div>
+    <div class="fr"><label>예금주명</label><input type="text" id="s_depositor" placeholder="예금주" oninput="rps()"></div>
+  </div>
+</div>
+</div>
+
+<div class="flex gap-8 mt-16">
+  <button class="btn btn-primary btn-lg" style="flex:1" onclick="downloadDocx('secondary')">⬇ DOCX 다운로드</button>
+</div>
+
+</div><!-- /form-wrap -->
+
+<div class="preview-card">
+  <div class="prev-actions"><span class="ct"><span class="dot"></span>2차 활용 계약서 미리보기</span></div>
+  <div class="prev-body" id="preview-secondary"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════ TAB 3: 계약서 검토 (로컬) ═══════════ -->
+<div id="tab-review" class="panel">
+<div class="wrap">
+<div class="sec-head"><h2><span class="ico">🔍</span>계약서 검토 (로컬 분석)</h2><p>파일을 업로드하면 피알원 표준 조항과 즉시 비교합니다. 외부 서버 전송 없이 브라우저 내에서만 처리됩니다.</p></div>
+
+<div class="notice n-info">
+  <span>ℹ️</span>
+  <span>조항별 키워드·수치를 기준으로 자동 체크합니다. DOCX 업로드 시 원본 문서 서식을 유지한 채 해당 조항 근처에 <strong style="color:#c00000">빨간 글씨 수정안</strong>을 삽입해 산출합니다. PDF는 원본 워드 서식 보존이 어려워 리포트형 교정본으로 산출됩니다.</span>
+</div>
+
+<div class="rev-grid">
+<!-- 업로드 -->
+<div>
+  <div class="card">
+    <div class="ch">
+      <span class="ct"><span class="dot"></span>계약서 파일 업로드</span>
+      <button class="btn btn-sm btn-outline hidden" id="rev-reset-btn" onclick="resetReview()">↩ 다시 업로드</button>
+    </div>
+    <div style="padding:16px">
+      <div id="rev-upzone" class="upzone" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleRevDrop(event)">
+        <input type="file" id="rev-file" accept=".docx,.pdf" onchange="handleRevFile(event)">
+        <div class="up-icon">📂</div>
+        <div class="up-title">파일을 드래그하거나 클릭하여 업로드</div>
+        <div class="up-desc">타사에서 받은 계약서 파일을 업로드하세요</div>
+        <div class="fmt-badges"><span class="fbadge bdocx">DOCX</span><span class="fbadge bpdf">PDF</span></div>
+      </div>
+      <div id="rev-file-loaded" class="hidden">
+        <div class="file-loaded">
+          <div class="fl-icon" id="rev-file-icon">📄</div>
+          <div style="flex:1;min-width:0">
+            <div class="fl-name" id="rev-file-name">—</div>
+            <div class="fl-meta" id="rev-file-meta">—</div>
+          </div>
+        </div>
+        <div class="fl-preview" id="rev-text-preview"></div>
+      </div>
+      <div id="rev-parsing" class="hidden loader-wrap"><div class="spinner"></div><div style="font-size:13px;color:var(--sub)">텍스트 추출 중...</div></div>
+      <div class="mt-12">
+        <button class="btn btn-primary btn-full btn-lg" id="rev-analyze-btn" onclick="runChecklist()" disabled>🔍 조항 검토 시작</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 결과 -->
+<div>
+  <div class="card">
+    <div class="ch">
+      <span class="ct"><span class="dot"></span>검토 결과</span>
+      <div class="review-actions">
+        <button class="btn btn-sm btn-green hidden" id="rev-download-btn" onclick="downloadCorrectedDocx()">원본서식 빨간 교정 DOCX</button>
+        <button class="btn btn-sm btn-outline hidden" id="rev-copy-btn" onclick="copyReview()">결과 복사</button>
+      </div>
+    </div>
+    <div id="rev-result" style="padding:16px;max-height:680px;overflow-y:auto">
+      <div class="empty-state"><div class="empty-icon">⚖️</div><p>계약서 파일을 업로드하고<br><strong>조항 검토 시작</strong>을 누르면<br>결과가 여기에 표시됩니다.</p></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let kolType = 'individual'; // 'individual' | 'corp'
+let payType = 'lump';       // 'lump' | 'split'
+let restrictOn = true;
+let revText = '';
+
+// ═══════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════
+// TOGGLE HELPERS
+// ═══════════════════════════════════════════════════
+function setKolType(t) {
+  kolType = t;
+  ['individual','corp'].forEach(k=>{
+    document.getElementById('btn-'+k).classList.toggle('active', k===t);
+  });
+  document.getElementById('individual-fields').classList.toggle('hidden', t!=='individual');
+  document.getElementById('corp-fields').classList.toggle('hidden', t!=='corp');
+  document.getElementById('pay-individual').classList.toggle('hidden', t!=='individual');
+  document.getElementById('pay-corp').classList.toggle('hidden', t!=='corp');
+  document.getElementById('kol-section-title').textContent = t==='individual' ? '👤 인플루언서 정보 ("을")' : '🏢 법인 정보 ("을")';
+  document.getElementById('pay-section-title').textContent = t==='individual' ? '💰 대금 정보 (개인 · 원천징수)' : '💰 대금 정보 (법인 · VAT 별도)';
+  // 유지기간 기본값
+  document.getElementById('c_keep_mo').value = t==='corp' ? 12 : 6;
+  rp();
+}
+function setPayType(t) {
+  payType = t;
+  document.getElementById('btn-pay-lump').classList.toggle('active', t==='lump');
+  document.getElementById('btn-pay-split').classList.toggle('active', t==='split');
+  document.getElementById('pay-lump-block').classList.toggle('hidden', t!=='lump');
+  document.getElementById('pay-split-block').classList.toggle('hidden', t!=='split');
+  rp();
+}
+function setRestrict(on) {
+  restrictOn = on;
+  document.getElementById('btn-restrict-on').classList.toggle('active', on);
+  document.getElementById('btn-restrict-off').classList.toggle('active', !on);
+  document.getElementById('restrict-fields').classList.toggle('hidden', !on);
+  rp();
+}
+
+// ═══════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════
+function v(id) { return (document.getElementById(id)?.value||'').trim(); }
+function dateStr(id) {
+  const d = v(id); if(!d) return '____년 __월 __일';
+  const dt = new Date(d); return `${dt.getFullYear()}년 ${dt.getMonth()+1}월 ${dt.getDate()}일`;
+}
+function hl(t) { return `<span class="hl">${t||'____'}</span>`; }
+function cleanJosaTarget(t) {
+  return String(t||'').replace(/<[^>]*>/g,'').replace(/[\s\)\]\}\"'”’。.,;:!?]+$/g,'').trim();
+}
+function hasBatchim(t) {
+  const s = cleanJosaTarget(t);
+  for(let i=s.length-1;i>=0;i--){
+    const code=s.charCodeAt(i);
+    if(code>=0xAC00 && code<=0xD7A3) return ((code-0xAC00)%28)!==0;
+    if(/[A-Za-z0-9]/.test(s[i])) return false;
+  }
+  return false;
+}
+function endsWithRieul(t) {
+  const s = cleanJosaTarget(t);
+  for(let i=s.length-1;i>=0;i--){
+    const code=s.charCodeAt(i);
+    if(code>=0xAC00 && code<=0xD7A3) return ((code-0xAC00)%28)===8;
+  }
+  return false;
+}
+function josa(t,pair) {
+  if(pair==='으로/로') return (hasBatchim(t) && !endsWithRieul(t)) ? '으로' : '로';
+  const [a,b] = String(pair).split('/');
+  return hasBatchim(t) ? a : b;
+}
+function hlJ(t,pair) { return `${hl(t)}${josa(t,pair)}`; }
+function timeParticle(t) {
+  const s=cleanJosaTarget(t);
+  if(!s || /(에|에서|까지|즉시)$/.test(s)) return '';
+  return '에';
+}
+
+function syncKor(numId, korId) {
+  const raw = v(numId).replace(/[^0-9]/g,'');
+  if(!raw) return;
+  document.getElementById(korId).value = numToKor(parseInt(raw));
+}
+function numToKor(n) {
+  if(!n||n===0) return '';
+  const u=['','일','이','삼','사','오','육','칠','팔','구'];
+  const b=['','만','억','조'];
+  function chunk(n){
+    const p=['','십','백','천']; let r=''; let d=0;
+    while(n>0){const g=n%10; if(g>0)r=(d===0?u[g]:(g===1?'':u[g])+p[d])+r; n=Math.floor(n/10); d++;}
+    return r;
+  }
+  let parts=[]; let i=0; let tmp=n;
+  while(tmp>0){const c=tmp%10000; if(c>0)parts.unshift(chunk(c)+b[i]); tmp=Math.floor(tmp/10000); i++;}
+  return parts.join('')+'원';
+}
+function formatNum(n) {
+  if(!n) return '';
+  return parseInt(n.toString().replace(/[^0-9]/g,'')).toLocaleString('ko-KR');
+}
+function syncSplit() {
+  const pct1 = parseInt(v('c_s1_pct'))||0;
+  const pct2 = 100-pct1;
+  document.getElementById('c_s2_pct').value = pct2;
+  const total = parseInt(v('c_amount').replace(/[^0-9]/g,''))||0;
+  if(total) {
+    const a1 = Math.round(total*pct1/100);
+    const a2 = total-a1;
+    document.getElementById('c_s1_amt').value = a1.toLocaleString('ko-KR');
+    document.getElementById('c_s2_amt').value = a2.toLocaleString('ko-KR');
+    // update kor
+    document.getElementById('c_amount_kor').value = numToKor(total);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// CONTRACT PREVIEW (TAB 1)
+// ═══════════════════════════════════════════════════
+function rp() {
+  const date = dateStr('c_date');
+  const chType = v('c_ch_type')||'유튜브';
+  const isCorpV = kolType==='corp';
+  const kolLabel = isCorpV ? v('c_corp_name')||'____' : v('c_kol_name')||'____';
+  const kolType2 = isCorpV ? '사업자용' : '인플루언서용';
+  const chName = isCorpV ? v('c_ch_name_corp')||'____' : v('c_ch_name')||'____';
+  const chUrl = isCorpV ? v('c_ch_url_corp')||'____' : v('c_ch_url')||'____';
+  const performer = v('c_performer');
+  const brand = v('c_brand')||'____';
+  const product = v('c_product')||'____';
+  const uploadDate = v('c_upload_date')||'____년 __월 __일';
+  const uploadCount = v('c_upload_count')||'____';
+  const secondary = v('c_secondary')||'추후 협의';
+  const keepMo = v('c_keep_mo')||'6';
+  const amt = v('c_amount')||'____';
+  const amtKor = v('c_amount_kor')||'____';
+  const pen1 = v('c_pen1')||'50';
+  const pen2 = v('c_pen2')||'100';
+  const bank = v('c_bank')||'____'; const acc = v('c_account')||'____'; const dep = v('c_depositor')||'____';
+  
+  // intro
+  let introPerformer = '';
+  if(isCorpV && performer) introPerformer = `${performer}(이하 "출연자"라 한다)를 활용한 `;
+  const introA = isCorpV ? `${kolLabel}(이하 "을"이라 한다)은 "을"의 제작 채널 ${chName}(이하 "채널"이라 한다)에서 ` : `${kolLabel}(이하 "을"이라 한다)은 "을"의 제작 채널 '${chName}'(이하 "채널"이라 한다)에서 업로드되는 `;
+  
+  // payment block
+  let payBlock = '';
+  if(!isCorpV) {
+    const payCond = v('c_pay_cond')||'최종 콘텐츠 업로드 후 익월 말일 이내';
+    payBlock = `<div class="c-item"><span class="c-item-n">①</span><span>"갑"은 "을"로부터 제공받은 "콘텐츠"에 대하여 대금 일금 ${hl(amtKor)}(₩${hl(formatNum(amt))}/원천징수 포함)을 지급한다.</span></div>
+    <div class="c-item"><span class="c-item-n">②</span><span>"갑"은 ${hl(payCond)}에 "을"의 지정계좌로 해당 대금을 지급한다.</span></div>`;
+  } else if(payType==='lump') {
+    const cond = v('c_pay_lump_cond')||'세금계산서 발행일로부터 익월 말 이내';
+    payBlock = `<div class="c-item"><span class="c-item-n">①</span><span>"갑"은 "을"로부터 제공받은 "콘텐츠"에 대하여 대금 일금 ${hl(amtKor)}(₩${hl(formatNum(amt))}/VAT별도)을 지급한다.</span></div>
+    <div class="c-item"><span class="c-item-n">②</span><span>"갑"은 세금계산서를 전달받으면 ${hl(cond)}에 "을"의 지정계좌로 해당 대금을 지급한다.</span></div>`;
+  } else {
+    const p1 = v('c_s1_pct')||'30'; const p2 = (100-parseInt(p1)).toString();
+    const a1 = v('c_s1_amt')||'____'; const a2 = v('c_s2_amt')||'____';
+    const t1 = v('c_s1_tax_date')||'계약일자'; const t2 = v('c_s2_tax_date')||'업로드일자';
+    const c1 = v('c_s1_cond')||'세금계산서 발행일로부터 익월 말 이내';
+    const c2 = v('c_s2_cond')||'세금계산서 발행일로부터 익월 말 이내';
+    payBlock = `<div class="c-item"><span class="c-item-n">①</span><span>"갑"은 "을"로부터 제공받은 "콘텐츠"에 대하여 대금 일금 ${hl(amtKor)}(₩${hl(formatNum(amt))}/VAT별도)을 지급한다.</span></div>
+    <div class="c-item"><span class="c-item-n">②</span><span>"갑"은 "을"에게 아래와 같은 일정으로 대금을 지급한다.<br>
+    &nbsp;&nbsp;&nbsp;(1) 선금 ${hl(p1+'%')} - 일금 (₩${hl(formatNum(a1))}/VAT별도) → ${hl(t1)} 세금계산서 발행 → ${hl(c1)}<br>
+    &nbsp;&nbsp;&nbsp;(2) 잔금 ${hl(p2+'%')} - 일금 (₩${hl(formatNum(a2))}/VAT별도) → ${hl(t2)} 세금계산서 발행 → ${hl(c2)}</span></div>`;
+  }
+  
+  // restrict
+  let restrictClause = '';
+  if(restrictOn) {
+    const mo = v('c_restrict_mo')||'3'; const cat = v('c_restrict_cat')||'____';
+    restrictClause = `<div class="c-item"><span class="c-item-n">⑦</span><span>"을"은 "콘텐츠"가 업로드 되고 ${hl(mo+'개월')} 이내의 기간 동안 ${hl(cat)} 카테고리의 타사 제품 광고 콘텐츠를 업로드할 수 없다.</span></div>`;
+  }
+  
+  // performer ref
+  const perfRef = (isCorpV && performer) ? ` 및 "출연자"` : '';
+  const perfSubject = (isCorpV && performer) ? `"출연자"(${performer})` : '"을"';
+  const keepSubject = `"을"${perfRef}`;
+  
+  // sign block
+  let signB = '';
+  if(!isCorpV) {
+    const n=v('c_kol_name')||'____'; const a=v('c_kol_addr')||'____'; const id=v('c_kol_id')||'____';
+    signB = `<div class="c-party-block"><h4>(을)</h4><p><strong>성&nbsp;&nbsp;&nbsp;&nbsp;명</strong>&nbsp;&nbsp;: ${hl(n)} (인)</p><p><strong>주&nbsp;&nbsp;&nbsp;&nbsp;소</strong>&nbsp;&nbsp;: ${hl(a)}</p><p><strong>주민등록번호</strong> : ${hl(id)}</p></div>`;
+  } else {
+    const cn=v('c_corp_name')||'____'; const ca=v('c_corp_addr')||'____'; const cb=v('c_corp_biz')||'____'; const cc=v('c_corp_ceo')||'____';
+    signB = `<div class="c-party-block"><h4>(을)</h4><p><strong>상호명</strong>&nbsp;&nbsp;&nbsp;&nbsp;: ${hl(cn)}</p><p><strong>주&nbsp;&nbsp;&nbsp;소</strong>&nbsp;&nbsp;: ${hl(ca)}</p><p><strong>사업자등록번호</strong> : ${hl(cb)}</p><p><strong>대표이사</strong>&nbsp;&nbsp;: ${hl(cc)} (인)</p></div>`;
+  }
+  
+  const html = `
+<table class="c-title-table"><tr><td><strong>${chType} 협업 콘텐츠 제작 계약서</strong><br><small>(${kolType2})</small></td></tr></table>
+<p class="c-date">${date}</p>
+<p class="c-party">㈜ 피알원</p>
+<p class="c-party">${hl(kolLabel)}</p>
+<p class="c-intro">㈜피알원(이하 "갑"이라 한다)과 ${introA}${introPerformer}${hl(brand)}(이하 "브랜드"라 한다)의 광고(이하 "콘텐츠"라 한다) 제작 업무와 관련하여 아래와 같이 계약을 체결하고 신의성실의 원칙에 따라 성실히 이행할 것을 약정한다.</p>
+<hr class="c-divider">
+<div class="c-art-title">제1조 (목적)</div>
+<p style="font-size:12px;line-height:1.85;padding-left:4px">본 계약은 "갑"의 요청에 따라 "을"이 "브랜드"의 "콘텐츠"를 제작하는 것과 관련된 필요한 제반 사항 및 계약 당사자의 권리의무를 규정하여 상호이익의 증진을 도모함을 목적으로 한다.</p>
+<div class="c-art-title">제2조 (관련법규 및 거래질서 준수)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>"갑"과 "을"은 본 계약과 관련하여 관련법규를 준수하고, 공정하고 투명하게 계약을 이행한다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>"을"은 "갑"의 임직원에게 금품, 향응제공 등 공정한 거래질서를 위반하는 행위를 하지 아니한다.</span></div>
+<div class="c-art-title">제3조 ("갑"의 의무)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>"갑"은 "을"이 업무를 수행하는데 필요한 정보와 자료를 제공한다. "을"은 제공받은 정보 및 자료를 이 계약의 목적 이외에 이용하지 못하며, 계약 종료 시 즉시 반환하거나 폐기하여야 한다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>"갑"은 "을"에게 협의된 가이드라인에서 벗어난 내용에 대해서는 수정요청을 할 수 없다.</span></div>
+<div class="c-item"><span class="c-item-n">③</span><span>"갑"은 사전 협의된 기획안을 토대로 진행 완료된 촬영물에 대해 재촬영을 요구할 수 없다.</span></div>
+<div class="c-art-title">제4조 ("을"의 의무)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>"을"은 "갑"에게 아래와 같이 "콘텐츠"를 제공하고 "채널"에 배포한다.</span></div>
+<table class="c-table">
+<tr><th>배포채널</th><td>URL : ${hl(chUrl)}</td></tr>
+<tr><th>광고제품</th><td>${hl(product)}</td></tr>
+<tr><th>진행방식</th><td>${hl(uploadCount)}</td></tr>
+<tr><th>업로드 일시</th><td>${hl(uploadDate)} *일정 변경 가능성 有</td></tr>
+<tr><th>2차 활용</th><td>${hl(secondary)}</td></tr>
+</table>
+<div class="c-item"><span class="c-item-n">②</span><span>"을"은 사전 협의된 가이드라인이 "콘텐츠" 제작에 반영될 수 있도록 하여야 한다.</span></div>
+<div class="c-item"><span class="c-item-n">③</span><span>"을"은 "콘텐츠" 업로드 전 영상을 "갑"에게 공유하여야 하며, "갑"은 해당 영상에 대해 1회 수정 요청을 할 수 있다. 단, 가이드에서 벗어난 수정사항이나 제품 오기, 효능효과 오인 등 이미 요청된 수정사항이 반영되지 않은 경우 횟수와 관계없이 수정을 반영해야 한다.</span></div>
+<div class="c-item"><span class="c-item-n">④</span><span>"을"은 "갑"과 협의된 기한까지 승인된 "콘텐츠"를 "채널"에 업로드한다. 단, 제작 상황에 따라 일정 조정 가능하다.</span></div>
+<div class="c-item"><span class="c-item-n">⑤</span><span>양 당사자의 동의 하에 ${keepSubject}${josa(keepSubject,'은/는')} "콘텐츠" 게시 후 ${hl(keepMo+'개월')}간 이를 삭제하거나 편집하여서는 아니되며, 일방적인 요구로 삭제할 수 없다.</span></div>
+<div class="c-item"><span class="c-item-n">⑥</span><span>"갑"이나 "을"이 심각한 사회적 문제를 일으키는 등 상대방에게 법적·사실적 손해나 이미지 훼손을 야기할 가능성이 상당히 높은 경우, 협의 하에 "콘텐츠"를 삭제할 수 있다.</span></div>
+${restrictClause}
+<div class="c-art-title">제5조 (지적재산권 및 소유권)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>본 계약에 의거한 "콘텐츠"의 지적재산권 및 소유권은 "을"에게 있다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>"갑"은 "을"의 동의 하에 "콘텐츠"를 재편집·가공하여 2차 활용 광고물로 사용할 수 있다.</span></div>
+<div class="c-item"><span class="c-item-n">③</span><span>2차 활용 광고물의 사용기간은 상호 협의한 일정과 비용에 맞춰 진행한다.</span></div>
+<div class="c-item"><span class="c-item-n">④</span><span>"갑"은 "을"에게 2차 활용 광고물을 사전 공유하고 합의하여야 하며, "을"이 이미지와 맞지 않는다고 판단하는 경우 수정을 요구할 수 있다.</span></div>
+<div class="c-item"><span class="c-item-n">⑤</span><span>"브랜드"는 2차 활용 만료 후 광고물의 새로운 전시·배포·전송을 할 수 없으며, 기 집행 광고물을 회수하여야 한다.</span></div>
+<div class="c-art-title">제6조 (대금지급)</div>
+${payBlock}
+<table class="c-table" style="margin-top:8px">
+<tr><th colspan="2" style="text-align:center">지정계좌</th></tr>
+<tr><th>은행명</th><td>${hl(bank)}</td></tr>
+<tr><th>계좌번호</th><td>${hl(acc)}</td></tr>
+<tr><th>예금주명</th><td>${hl(dep)}</td></tr>
+</table>
+<div class="c-art-title">제7조 (정보이용에 대한 책임)</div>
+<p style="font-size:12px;line-height:1.85;padding-left:4px">"을"은 "갑"의 동의 하에 상품 및 기타 정보를 사용하여야 하며, 동의 없이 사용된 정보로 인해 "갑"에게 손해가 발생할 경우 "을"이 책임을 진다.</p>
+<div class="c-art-title">제8조 (양도금지)</div>
+<p style="font-size:12px;line-height:1.85;padding-left:4px">"갑"과 "을"은 상대방의 사전 서면 승낙 없이 본 계약상의 권리·의무를 제3자에게 양도, 담보제공, 기타 처분하여서는 아니된다.</p>
+<div class="c-art-title">제9조 (계약의 해제 및 해지)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>당사자 일방이 의무를 위반하거나 불성실하게 이행할 경우, 상대방은 서면 또는 구두 유선으로 시정을 요구할 수 있으며, 그로부터 7일 이내에 시정이 없는 경우 서면통지로써 계약을 해제 또는 해지할 수 있다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>(가)압류, (가)처분, 파산 신청 / 주요 자산·영업 양도 / 영업정지·허가취소 / 어음·수표 지급정지 / 사회적 물의 발생 시 서면통지로 즉시 해제·해지할 수 있다.</span></div>
+<div class="c-item"><span class="c-item-n">③</span><span>"갑"이 의뢰한 "브랜드"의 기업 이미지 및 제품에 대한 중대한 결함이나 문제가 발생할 경우 "을"은 "콘텐츠"를 즉시 삭제하고 본 계약을 해지할 수 있으며, 2차활용 광고물 회수·사용 중지, "브랜드" 관련 표시·사용 중지를 요청할 수 있다.</span></div>
+<div class="c-art-title">제10조 (면책 및 손해배상)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>"을"은 저작권법, 상표법, 표시 및 광고의 공정화에 관한 법률, 인터넷 광고심사 지침 등 관련 법률 및 가이드라인을 준수하여야 한다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>귀책사유자는 자기 비용으로 상대방을 면책시켜야 한다.</span></div>
+<div class="c-item"><span class="c-item-n">③</span><span>합의된 기획안 범위 내에서 제작·게시된 "콘텐츠"로 인한 법적 문제에 대해서는 "을"에게 단독 책임을 지우지 않는다.</span></div>
+<div class="c-item"><span class="c-item-n">④</span><span>"갑"의 일방적 사유로 계약을 해지할 경우 위약금: 기획안 전달 후 계약금액의 ${hl(pen1+'%')}, 콘텐츠 초안/제작 후 계약금액의 ${hl(pen2+'%')} (해지일로부터 7일 이내 지급).</span></div>
+<div class="c-item"><span class="c-item-n">⑤</span><span>"콘텐츠" 업로드 후 1개월 이내 ${perfSubject}${josa(perfSubject,'이/가')} 심각한 사회적 문제를 일으켜 "콘텐츠"를 삭제하는 경우 "갑"은 "을"에게 손해배상을 청구할 수 있다.</span></div>
+<div class="c-art-title">제11조 (비밀유지)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>"갑"과 "을"은 계약기간 중은 물론 계약 종료·해제·해지 후에도 계약조건, 기술정보, 영업비밀, 유통정보 등을 서면 동의 없이 제3자에게 유출하거나 계약 이행 이외의 목적으로 이용하여서는 아니 된다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>비밀유지 의무 위반 시 귀책 당사자는 상대방에게 손해를 배상하여야 한다.</span></div>
+<div class="c-art-title">제12조 (분쟁해결 및 합의관할)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>미정 사항 또는 해석 다툼은 관계 법령 또는 일반 상관례에 따라 상호협의로 해결한다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>협의에도 불구하고 분쟁이 해결되지 않을 경우 서울중앙지방법원을 합의관할법원으로 한다.</span></div>
+<div class="c-art-title">제13조 (추가합의)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>"을"이 제출한 기획서는 본 계약내용에 포함된다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>미정 사항은 상호 협의 후 부속 약정서로 추가·변경·삭제할 수 있으며, 그 밖의 내용은 일반적인 상관례에 따른다.</span></div>
+<div class="c-sign">
+<p style="font-size:12px;line-height:1.8;text-align:center">상기 내용의 계약체결을 증명하기 위해 계약서를 2부 작성하여 "갑"과 "을"은 기명 날인한 후 각 1부씩 보관하기로 한다.</p>
+<p style="font-size:13px;font-weight:700;text-align:center;margin:12px 0">${date}</p>
+<div class="c-sign-grid">
+  <div class="c-party-block"><h4>(갑)</h4><p><strong>회사명</strong>&nbsp;&nbsp;: ㈜피알원</p><p><strong>주&nbsp;&nbsp;&nbsp;소</strong>&nbsp;&nbsp;: 서울특별시 중구 마른내로 27, 11층(초동, 타워107)</p><p><strong>사업자등록번호</strong> : 110-81-75199</p><p><strong>대표이사</strong>&nbsp;&nbsp;: 조 재 형, 이 백 수 (인)</p></div>
+  ${signB}
+</div>
+</div>`;
+  document.getElementById('preview-content').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// 2차 활용 PREVIEW (TAB 2)
+// ═══════════════════════════════════════════════════
+function rps() {
+  const date = dateStr('s_date');
+  const performer = v('s_performer')||'____';
+  const corp = v('s_corp')||'____';
+  const ceo = v('s_ceo')||'____';
+  const addr = v('s_addr')||'____';
+  const biz = v('s_biz')||'____';
+  const channel = v('s_channel')||'____';
+  const alias = v('s_performer_alias')||performer;
+  const contentName = v('s_content_name')||'____';
+  const startDate = dateStr('s_start');
+  const endDate = dateStr('s_end');
+  const useChannel = v('s_use_channel')||'디지털 전 매체(메타, 구글 등)';
+  const scope = v('s_scope')||'출연자의 초상권, 음성권, 성명권';
+  const commerce = v('s_commerce')||'불가';
+  const amt = v('s_amount')||'____';
+  const amtKor = v('s_amount_kor')||'____';
+  const taxDate = v('s_tax_date')||'2차 활용 시작일 기준';
+  const payCond = v('s_pay_cond')||'세금계산서 수령 후 30일 내';
+  const bank = v('s_bank')||'____'; const acc = v('s_account')||'____'; const dep = v('s_depositor')||'____';
+  
+  const html = `
+<table class="c-title-table"><tr><td><strong>브랜디드 영상광고 2차 활용 라이선스 계약서</strong></td></tr></table>
+<p class="c-date">${date}</p>
+<p class="c-party">㈜피알원</p>
+<p class="c-party">${hl(corp)}</p>
+<p class="c-intro">㈜피알원(이하 "갑"이라 한다)과 ${hl(corp)}(이하 "을"이라 한다)은 ${hl(performer)}(이하 "출연자"라 한다)의 출연채널 ${hl(channel)}(이하 "채널"이라 한다)에서 제작하는 입력한 브랜드 또는 광고주(이하 "브랜드"라 한다)의 광고물(이하 "콘텐츠"라 한다)을 재편집 및 가공, 2차 활용한 콘텐츠의 광고 활용 업무와 관련하여 아래와 같이 계약을 체결하고 신의성실의 원칙에 따라 성실히 이행할 것을 약정한다.</p>
+<hr class="c-divider">
+<div class="c-art-title">제1조 (목적)</div>
+<p style="font-size:12px;line-height:1.85;padding-left:4px">본 계약은 "갑"의 의뢰로 "출연자"가 출연한 유튜브 콘텐츠의 2차 활용 라이선스 협의에 그 목적이 있다.</p>
+<div class="c-art-title">제2조 (활용 내용)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>활용 콘텐츠: ${hl(contentName)}</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>활용 기간: ${hl(startDate)} ~ ${hl(endDate)} *기간 연장 시 사전 별도 협의</span></div>
+<div class="c-item"><span class="c-item-n">③</span><span>활용 채널: ${hl(useChannel)}에 한정되며, 커머스(썸네일, 상세페이지 등 구매연관) 사용 ${hl(commerce)}.</span></div>
+<div class="c-item"><span class="c-item-n">④</span><span>사용 범위: ${hl(scope)} ("출연자"의 명칭은 '${hl(alias)}'로 사용)</span></div>
+<div class="c-art-title">제3조 (준수사항)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>본 계약기간은 계약 체결일부터 ${hl(endDate)}까지로 한다. 단, 활용기간 연장 시 사전 별도 협의를 진행한다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>"갑"은 제작사가 제공한 "출연자"의 출연 영상을 재편집하여 광고물을 제작할 수 있다. 단, 해당 광고물은 "을"의 승인 하에 집행한다.</span></div>
+<div class="c-item"><span class="c-item-n">③</span><span>"갑"은 "을"의 정당하고 합리적인 광고물 수정요청이 있을 경우 이를 최대한 반영하도록 한다.</span></div>
+<div class="c-item"><span class="c-item-n">④</span><span>본 계약기간 중 "출연자"는 "브랜드"의 동종 업종 경쟁 업체의 광고 계약 및 행사 등에 제한을 받지 않는다.</span></div>
+<div class="c-art-title">제4조 (대금지급)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>"갑"은 "콘텐츠"의 2차활용에 대하여 "을"에게 대금 ${hl(amtKor)}(₩${hl(formatNum(amt))}/VAT별도)을 지급한다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>"을"은 ${hl(taxDate)}${josa(taxDate,'으로/로')} "갑"에게 세금계산서를 발행한다.</span></div>
+<div class="c-item"><span class="c-item-n">③</span><span>"갑"은 ${hl(payCond)}${timeParticle(payCond)} 본 조 제1항에 따른 대금을 "을"의 지정계좌로 지급한다.</span></div>
+<table class="c-table" style="margin-top:8px">
+<tr><th>은행명</th><td>${hl(bank)}</td></tr>
+<tr><th>계좌번호</th><td>${hl(acc)}</td></tr>
+<tr><th>예금주명</th><td>${hl(dep)}</td></tr>
+</table>
+<div class="c-art-title">제5조 (계약의 해제 및 해지)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>당사자 일방이 의무를 위반하거나 불성실하게 이행할 경우, 상대방은 시정을 요구할 수 있으며, 7일 이내 시정이 없는 경우 서면통지로써 계약을 해제 또는 해지할 수 있다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>(가)압류·파산·영업정지·어음수표 지급정지·사회적 물의 발생 시 즉시 해제·해지할 수 있다.</span></div>
+<div class="c-art-title">제6조 (분쟁해결 및 합의관할)</div>
+<div class="c-item"><span class="c-item-n">①</span><span>미정 사항 또는 해석 다툼은 관계 법령 및 일반 상관례에 따라 상호협의로 해결한다.</span></div>
+<div class="c-item"><span class="c-item-n">②</span><span>협의에도 불구하고 분쟁이 해결되지 않을 경우 서울중앙지방법원을 합의관할법원으로 한다.</span></div>
+<div class="c-sign">
+<p style="font-size:12px;line-height:1.8;text-align:center">상기 내용의 계약체결을 증명하기 위해 계약서를 2통 작성하여 "갑"과 "을"은 기명 날인한 후 각 1부씩 보관하기로 한다.</p>
+<p style="font-size:13px;font-weight:700;text-align:center;margin:12px 0">${date}</p>
+<div class="c-sign-grid">
+  <div class="c-party-block"><h4>(갑)</h4><p><strong>회사명</strong>&nbsp;&nbsp;: ㈜피알원</p><p><strong>주&nbsp;&nbsp;&nbsp;소</strong>&nbsp;&nbsp;: 서울특별시 중구 마른내로 27, 11층(초동, 타워107)</p><p><strong>사업자등록번호</strong> : 110-81-75199</p><p><strong>대표이사</strong>&nbsp;&nbsp;: 조 재 형, 이 백 수 (인)</p></div>
+  <div class="c-party-block"><h4>(을)</h4><p><strong>상호명</strong>&nbsp;&nbsp;&nbsp;: ${hl(corp)}</p><p><strong>주&nbsp;&nbsp;&nbsp;소</strong>&nbsp;&nbsp;: ${hl(addr)}</p><p><strong>사업자등록번호</strong> : ${hl(biz)}</p><p><strong>대표이사</strong>&nbsp;&nbsp;: ${hl(ceo)} (인)</p></div>
+</div>
+</div>`;
+  document.getElementById('preview-secondary').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// DOCX DOWNLOAD
+// ═══════════════════════════════════════════════════
+async function downloadDocx(type) {
+  if(!window.docx){alert('DOCX 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');return;}
+  const {Document,Packer,Paragraph,Table,TableRow,TableCell,TextRun,
+    BorderStyle,AlignmentType,WidthType,ShadingType} = window.docx;
+
+  const F='맑은 고딕'; const SB=21; const SH=28; const SH2=26; const COVER=23;
+  const asText=(t,fb='')=>{
+    if(t && typeof t==='object' && t._seg) return String((t.text===undefined||t.text===null||t.text==='')?fb:t.text);
+    return String((t===undefined||t===null||t==='')?fb:t);
+  };
+  const run=(t,o={})=>new TextRun({text:asText(t),font:F,size:SB,...o});
+  const bold=(t,o={})=>new TextRun({text:asText(t),font:F,size:SB,bold:true,...o});
+  // 생성기 입력값/자동 삽입값 표시용: Word에서도 이미지 예시처럼 파란 글씨 + 연한 파란 배경으로 표기
+  const mark=(t,o={})=>new TextRun({
+    text:asText(t,'____'),font:F,size:SB,color:'1D4ED8',
+    shading:{fill:'DDEBFF',type:ShadingType.CLEAR,color:'auto'},...o
+  });
+  const m=(text,opt={})=>({_seg:'mark',text,opt});
+  const b=(text,opt={})=>({_seg:'bold',text,opt});
+  const rs=(parts=[])=>parts.map(x=>{
+    if(x&&x._seg==='mark') return mark(x.text,x.opt||{});
+    if(x&&x._seg==='bold') return bold(x.text,x.opt||{});
+    return run(x);
+  });
+  const p=(ch,o={})=>new Paragraph({children:ch,spacing:{line:340,before:0,after:0},...o});
+  const para=(parts,o={})=>p(rs(parts),o);
+  const blank=()=>p([run('')],{spacing:{line:200}});
+  const artTitle=(num,title)=>p([bold('● '),bold(`제${num}조 (${title})`)],{spacing:{before:240,after:100,line:360}});
+  const itemR=(n,parts)=>p([bold(`${['①','②','③','④','⑤','⑥','⑦','⑧','⑨'][n-1]||n} `),...rs(parts)],{indent:{left:220}});
+  const item=(n,txt)=>itemR(n,[txt]);
+  const subR=(parts)=>p([run('  · '),...rs(parts)],{indent:{left:360}});
+  const sub=(txt)=>subR([txt]);
+  const B1={style:BorderStyle.SINGLE,size:6,color:'000000'};
+  const BORDERS={top:B1,bottom:B1,left:B1,right:B1};
+  const cellRuns=(v,head=false)=>{
+    if(Array.isArray(v)) return rs(v);
+    if(v && typeof v==='object' && v._seg) return rs([v]);
+    return head?[bold(v)]:[run(v)];
+  };
+  const hRow=(vals,ws)=>new TableRow({children:vals.map((v,i)=>new TableCell({
+    borders:BORDERS,width:{size:ws[i],type:WidthType.DXA},
+    shading:{fill:'EEF2FA',type:ShadingType.CLEAR},
+    margins:{top:80,bottom:80,left:150,right:150},
+    children:[p(cellRuns(v,true))]
+  }))});
+  const dRow=(vals,ws)=>new TableRow({children:vals.map((v,i)=>new TableCell({
+    borders:BORDERS,width:{size:ws[i],type:WidthType.DXA},
+    margins:{top:80,bottom:80,left:150,right:150},
+    children:[p(cellRuns(v,false))]
+  }))});
+  const tbl=(rows,ws=[2200,6600])=>new Table({width:{size:8800,type:WidthType.DXA},columnWidths:ws,rows});
+  const titleTbl=(title)=>{ const parts=String(title||'').split(/\n/); const t1=parts[0]||''; const t2=parts[1]||''; return new Table({
+    alignment:AlignmentType.CENTER,
+    width:{size:7600,type:WidthType.DXA},columnWidths:[7600],
+    rows:[new TableRow({children:[new TableCell({
+      borders:BORDERS,width:{size:7600,type:WidthType.DXA},
+      margins:{top:105,bottom:105,left:160,right:160},
+      children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:t1,bold:true,font:F,size:SH}),...(t2?[new TextRun({text:t2,bold:true,font:F,size:SH2,break:1})]:[])],spacing:{line:330,before:0,after:0}})]
+    })]})]
+  });};
+  const divider=()=>new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'}},children:[],spacing:{line:200}});
+  const sign=(label,lines)=>new TableCell({
+    borders:{top:B1,bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}},
+    width:{size:4400,type:WidthType.DXA},margins:{top:80,bottom:80,left:100,right:100},
+    children:[p([bold(label)],{spacing:{after:120,before:0,line:340}}),...lines.map(l=>p(cellRuns(l,false)))]
+  });
+
+  let children=[];
+  let filename='계약서.docx';
+
+  if(type==='content'){
+    const date=dateStr('c_date');
+    const isCorpV=kolType==='corp';
+    const kolName=isCorpV?v('c_corp_name'):v('c_kol_name');
+    const kolLabel=isCorpV?kolName+'(이하 "을"이라 한다)':kolName+'(이하 "을"이라 한다)';
+    const chType=v('c_ch_type')||'유튜브';
+    const chName=isCorpV?v('c_ch_name_corp'):v('c_ch_name');
+    const chUrl=isCorpV?v('c_ch_url_corp'):v('c_ch_url');
+    const performer=v('c_performer'); const brand=v('c_brand'); const product=v('c_product');
+    const uploadDate=v('c_upload_date'); const uploadCount=v('c_upload_count');
+    const secondary=v('c_secondary')||'추후 협의';
+    const keepMo=v('c_keep_mo')||'6'; const amt=v('c_amount'); const amtKor=v('c_amount_kor');
+    const pen1=v('c_pen1')||'50'; const pen2=v('c_pen2')||'100';
+    const bank=v('c_bank'); const acc=v('c_account'); const dep=v('c_depositor');
+    const kolTypeLabel=isCorpV?'사업자용':'인플루언서용';
+    const introPerformer=isCorpV&&performer?`${performer}(이하 "출연자"라 한다)를 활용한 `:'';
+    const perfRef=isCorpV&&performer?' 및 "출연자"':'';
+    const perfSubject=isCorpV&&performer?`"출연자"(${performer})`:'"을"';
+    const keepSubject=`"을"${perfRef}`;
+    filename=`계약서_${kolName}_${date}.docx`;
+
+    let payItems=[];
+    if(!isCorpV){
+      const payCond=v('c_pay_cond')||'최종 콘텐츠 업로드 후 익월 말일 이내';
+      payItems=[
+        itemR(1,['"갑"은 "을"로부터 제공받은 "콘텐츠"에 대하여 대금 일금 ',m(amtKor),'(\\',m(formatNum(amt)),'/원천징수 포함)을 지급한다.']),
+        itemR(2,['"갑"은 ',m(payCond),'에 "을"의 지정계좌로 해당 대금을 지급한다.'])
+      ];
+    } else if(payType==='lump'){
+      const cond=v('c_pay_lump_cond')||'세금계산서 발행일로부터 익월 말 이내';
+      payItems=[
+        itemR(1,['"갑"은 "을"로부터 제공받은 "콘텐츠"에 대하여 대금 일금 ',m(amtKor),'(\\',m(formatNum(amt)),'/VAT별도)을 지급한다.']),
+        itemR(2,['"갑"은 세금계산서를 전달받으면 ',m(cond),'에 "을"의 지정계좌로 해당 대금을 지급한다.'])
+      ];
+    } else {
+      const p1=v('c_s1_pct')||'30'; const p2=(100-parseInt(p1)).toString();
+      const a1=v('c_s1_amt'); const a2=v('c_s2_amt');
+      const t1=v('c_s1_tax_date')||'계약일자'; const t2=v('c_s2_tax_date')||'업로드일자';
+      const c1=v('c_s1_cond')||'세금계산서 발행일로부터 익월 말 이내';
+      const c2=v('c_s2_cond')||'세금계산서 발행일로부터 익월 말 이내';
+      payItems=[
+        itemR(1,['"갑"은 "을"로부터 제공받은 "콘텐츠"에 대하여 대금 일금 ',m(amtKor),'(\\',m(formatNum(amt)),'/VAT별도)을 지급한다.']),
+        item(2,'"갑"은 아래 일정으로 대금을 지급한다.'),
+        subR(['선금 ',m(p1+'%'),' - 일금 \\',m(formatNum(a1)),'/VAT별도 → ',m(t1),' 세금계산서 발행 → ',m(c1)]),
+        subR(['잔금 ',m(p2+'%'),' - 일금 \\',m(formatNum(a2)),'/VAT별도 → ',m(t2),' 세금계산서 발행 → ',m(c2)])
+      ];
+    }
+
+    const restrictItems=restrictOn?[itemR(7,['"을"은 "콘텐츠"가 업로드 되고 ',m((v('c_restrict_mo')||'3')+'개월'),' 이내의 기간 동안 ',m(v('c_restrict_cat')||'다이어트 건강기능식품'),' 카테고리의 타사 제품 광고 콘텐츠를 업로드할 수 없다.'])]:[]; 
+
+    const signGap=isCorpV?[
+      sign('(을)',[
+        ['상호명  : ',m(v('c_corp_name')||'')],
+        ['주    소 : ',m(v('c_corp_addr')||'')],
+        ['사업자등록번호 : ',m(v('c_corp_biz')||'')],
+        ['대표이사 : ',m(v('c_corp_ceo')||''),' (인)']
+      ])
+    ]:[
+      sign('(을)',[
+        ['성   명 : ',m(v('c_kol_name')||''),' (인)'],
+        ['주    소 : ',m(v('c_kol_addr')||'')],
+        ['주민등록번호 : ',m(v('c_kol_id')||'')]
+      ])
+    ];
+
+    children=[
+      blank(),blank(),blank(),blank(),
+      titleTbl(`${chType} 협업 콘텐츠 제작 계약서\n(${kolTypeLabel})`),
+      blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),
+      p([mark(date,{size:COVER})],{alignment:AlignmentType.CENTER,spacing:{line:360}}),
+      blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),
+      p([new TextRun({text:'㈜피알원',font:F,size:COVER})],{alignment:AlignmentType.CENTER,spacing:{line:360}}),
+      p([mark(kolName,{size:COVER})],{alignment:AlignmentType.CENTER,spacing:{line:360}}),
+      new Paragraph({pageBreakBefore:true,children:[run('')],spacing:{line:200}}),
+      para(['㈜피알원(이하 "갑"이라 한다)과 ',m(kolName),'(이하 "을"이라 한다)은 "을"의 제작 채널 ',m(chName),'(이하 "채널"이라 한다)에서 ',...(introPerformer?[m(introPerformer)]:[]),m(brand),'(이하 "브랜드"라 한다)의 광고(이하 "콘텐츠"라 한다) 제작 업무와 관련하여 아래와 같이 계약을 체결하고 신의성실의 원칙에 따라 성실히 이행할 것을 약정한다.'],{spacing:{line:380,before:80,after:300},alignment:AlignmentType.JUSTIFIED}),
+      divider(),
+      artTitle(1,'목적'),p([run('본 계약은 "갑"의 요청에 따라 "을"이 "브랜드"의 "콘텐츠"를 제작하는 것과 관련된 필요한 제반 사항 및 계약 당사자의 권리의무를 규정하여 상호이익의 증진을 도모함을 목적으로 한다.')],{indent:{left:220},spacing:{line:340}}),
+      artTitle(2,'관련법규 및 거래질서 준수'),
+      item(1,'"갑"과 "을"은 본 계약과 관련하여 관련법규를 준수하고, 공정하고 투명하게 계약을 이행한다.'),
+      item(2,'"을"은 본 계약을 이행함에 있어 "갑"의 임직원에게 금품, 향응제공 등 공정한 거래질서를 위반하는 행위를 하지 아니한다.'),
+      artTitle(3,'"갑"의 의무'),
+      item(1,'"갑"은 "을"이 업무를 수행하는데 필요한 정보와 자료를 "을"에게 제공한다. "을"은 제공받은 정보 및 자료를 이 계약의 목적 이외에 이용하지 못하며, 계약 종료 시 즉시 반환하거나 폐기하여야 한다.'),
+      item(2,'"갑"은 "을"에게 협의된 가이드라인에서 벗어난 내용에 대해서는 수정요청을 할 수 없다.'),
+      item(3,'"갑"은 사전 협의된 기획안을 토대로 진행 완료된 촬영물에 대해 재촬영을 요구할 수 없다.'),
+      artTitle(4,'"을"의 의무'),
+      item(1,'"을"은 "갑"에게 아래와 같이 "콘텐츠"를 제공하고 "채널"에 배포한다.'),
+      tbl([
+        hRow(['배포채널',['URL : ',m(chUrl)]],[2200,6600]),
+        dRow(['광고제품',m(product)],[2200,6600]),
+        dRow(['진행방식',m(uploadCount)],[2200,6600]),
+        dRow(['업로드 일시',[m(uploadDate),' *일정 변경 가능성 有']],[2200,6600]),
+        dRow(['2차 활용',m(secondary)],[2200,6600]),
+      ]),
+      item(2,'"을"은 사전 협의된 가이드라인이 "콘텐츠" 제작에 반영될 수 있도록 하여야 한다.'),
+      item(3,'"을"은 "콘텐츠" 업로드 전 영상을 "갑"에게 공유하여야 하며, "갑"은 해당 영상에 대해 1회 수정 요청을 할 수 있다. 단, 가이드에서 벗어난 수정사항이나 제품 오기, 효능효과 오인 등 이미 요청된 수정사항이 반영되지 않은 경우 횟수와 관계없이 수정을 반영해야 한다.'),
+      item(4,'"을"은 "갑"과 협의된 기한까지 승인된 "콘텐츠"를 "채널"에 업로드한다. 단, 제작 상황에 따라 일정 조정 가능하다.'),
+      itemR(5,['양 당사자의 동의 하에 ',keepSubject,josa(keepSubject,'은/는'),' "콘텐츠" 게시 후 ',m(keepMo+'개월'),'간 이를 삭제하거나 편집하여서는 아니되며, 일방적인 요구로 삭제할 수 없다.']),
+      item(6,'"갑"이나 "을"이 심각한 사회적 문제를 일으키는 등 상대방에게 법적·사실적 손해나 이미지 훼손을 야기할 가능성이 상당히 높은 경우, 협의 하에 "콘텐츠"를 삭제할 수 있다.'),
+      ...restrictItems,
+      artTitle(5,'지적재산권 및 소유권'),
+      item(1,'본 계약에 의거한 "콘텐츠"의 지적재산권 및 소유권은 "을"에게 있다.'),
+      item(2,'"갑"은 "을"의 동의 하에 "콘텐츠"를 재편집·가공하여 2차 활용 광고물로 사용할 수 있다.'),
+      item(3,'2차 활용 광고물의 사용기간은 상호 협의한 일정과 비용에 맞춰 진행한다.'),
+      item(4,'"갑"은 "을"에게 2차 활용 광고물을 사전 공유하고 합의하여야 하며, "을"이 이미지와 맞지 않는다고 판단하는 경우 수정을 요구할 수 있다.'),
+      item(5,'"브랜드"는 2차 활용 만료 후 광고물의 새로운 전시·배포·전송을 할 수 없으며, 기 집행 광고물을 회수하여야 한다.'),
+      artTitle(6,'대금지급'),
+      ...payItems,
+      tbl([
+        new TableRow({children:[new TableCell({borders:BORDERS,width:{size:8800,type:WidthType.DXA},columnSpan:2,shading:{fill:'EEF2FA',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:150,right:150},children:[p([bold('지정계좌')],{alignment:AlignmentType.CENTER})]})]}),
+        dRow(['은행명',m(bank)],[2200,6600]),
+        dRow(['계좌번호',m(acc)],[2200,6600]),
+        dRow(['예금주명',m(dep)],[2200,6600]),
+      ]),
+      artTitle(7,'정보이용에 대한 책임'),
+      p([run('"을"은 "갑"의 동의 하에 상품 및 기타 정보를 사용하여야 하며, 동의 없이 사용된 정보로 인해 "갑"에게 손해가 발생할 경우 "을"이 책임을 진다.')],{indent:{left:220},spacing:{line:340}}),
+      artTitle(8,'양도금지'),
+      p([run('"갑"과 "을"은 상대방의 사전 서면 승낙 없이 본 계약상의 권리·의무를 제3자에게 양도, 담보제공, 기타 처분하여서는 아니된다.')],{indent:{left:220},spacing:{line:340}}),
+      artTitle(9,'계약의 해제 및 해지'),
+      item(1,'당사자 일방이 의무를 위반하거나 불성실하게 이행할 경우, 상대방은 시정을 요구할 수 있으며, 그로부터 7일 이내에 시정이 없는 경우 서면통지로써 계약을 해제 또는 해지할 수 있다.'),
+      item(2,'(가)압류, (가)처분, 파산 신청 / 주요 자산·영업 양도 / 영업정지·허가취소 / 어음·수표 지급정지 / 사회적 물의 발생 시 서면통지로 즉시 해제·해지할 수 있다.'),
+      itemR(3,['"갑"이 의뢰한 "브랜드"의 기업 이미지 및 제품에 대한 중대한 결함이나 문제가 발생할 경우 "을"은 "콘텐츠"를 즉시 삭제하고 본 계약을 해지할 수 있으며, 2차활용 광고물 회수·사용 중지, "브랜드" 관련 표시·사용 중지를 요청할 수 있다.']),
+      artTitle(10,'면책 및 손해배상'),
+      item(1,'"을"은 저작권법, 상표법, 표시 및 광고의 공정화에 관한 법률, 인터넷 광고심사 지침 등 관련 법률 및 가이드라인을 준수하여야 한다.'),
+      item(2,'귀책사유자는 자기 비용으로 상대방을 면책시켜야 한다.'),
+      item(3,'합의된 기획안 범위 내에서 제작·게시된 "콘텐츠"로 인한 법적 문제에 대해서는 "을"에게 단독 책임을 지우지 않는다.'),
+      itemR(4,['"갑"의 일방적 사유로 계약을 해지할 경우 위약금: 기획안 전달 후 계약금액의 ',m(pen1+'%'),', 콘텐츠 초안/제작 후 계약금액의 ',m(pen2+'%'),' (해지일로부터 7일 이내 지급).']),
+      itemR(5,['"콘텐츠" 업로드 후 1개월 이내 ',...(isCorpV&&performer?[m(perfSubject)]:[perfSubject]),josa(perfSubject,'이/가'),' 심각한 사회적 문제를 일으켜 "콘텐츠"를 삭제하는 경우 "갑"은 "을"에게 손해배상을 청구할 수 있다.']),
+      artTitle(11,'비밀유지'),
+      item(1,'"갑"과 "을"은 계약기간 중은 물론 계약 종료·해제·해지 후에도 계약조건, 기술정보, 영업비밀, 유통정보 등을 서면 동의 없이 제3자에게 유출하거나 계약 이행 이외의 목적으로 이용하여서는 아니 된다.'),
+      item(2,'비밀유지 의무 위반 시 귀책 당사자는 상대방에게 손해를 배상하여야 한다.'),
+      artTitle(12,'분쟁해결 및 합의관할'),
+      item(1,'미정 사항 또는 해석 다툼은 관계 법령 또는 일반 상관례에 따라 상호협의로 해결한다.'),
+      item(2,'협의에도 불구하고 분쟁이 해결되지 않을 경우 서울중앙지방법원을 합의관할법원으로 한다.'),
+      artTitle(13,'추가합의'),
+      item(1,'"을"이 제출한 기획서는 본 계약내용에 포함된다.'),
+      item(2,'미정 사항은 상호 협의 후 부속 약정서로 추가·변경·삭제할 수 있으며, 그 밖의 내용은 일반적인 상관례에 따른다.'),
+      blank(),
+      p([run('상기 내용의 계약체결을 증명하기 위해 계약서를 2부 작성하여 "갑"과 "을"은 기명 날인한 후 각 1부씩 보관하기로 한다.')],{alignment:AlignmentType.CENTER,spacing:{line:340}}),
+      p([mark(date)],{alignment:AlignmentType.CENTER,spacing:{before:160,line:340}}),blank(),
+      new Table({width:{size:8800,type:WidthType.DXA},columnWidths:[4400,4400],rows:[
+        new TableRow({children:[
+          sign('(갑)',['회사명  : ㈜피알원','주    소 : 서울특별시 중구 마른내로 27, 11층(초동, 타워107)','사업자등록번호 : 110-81-75199','대표이사 : 조 재 형, 이 백 수 (인)']),
+          ...signGap
+        ]})
+      ]})
+    ];
+  } else {
+    const date=dateStr('s_date');
+    const performer=v('s_performer'); const corp=v('s_corp'); const ceo=v('s_ceo');
+    const addr=v('s_addr'); const biz=v('s_biz');
+    const channel=v('s_channel'); const alias=v('s_performer_alias')||performer;
+    const contentName=v('s_content_name');
+    const startDate=dateStr('s_start'); const endDate=dateStr('s_end');
+    const useChannel=v('s_use_channel')||'디지털 전 매체(메타, 구글 등)';
+    const scope=v('s_scope')||'출연자의 초상권, 음성권, 성명권';
+    const commerce=v('s_commerce')||'불가';
+    const amt=v('s_amount'); const amtKor=v('s_amount_kor');
+    const taxDate=v('s_tax_date')||'2차 활용 시작일 기준';
+    const payCond=v('s_pay_cond')||'세금계산서 수령 후 30일 내';
+    const bank=v('s_bank'); const acc=v('s_account'); const dep=v('s_depositor');
+    filename=`2차활용계약서_${corp}_${date}.docx`;
+    children=[
+      blank(),blank(),blank(),blank(),
+      titleTbl('브랜디드 영상광고 2차 활용 라이선스 계약서'),
+      blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),
+      p([mark(date,{size:COVER})],{alignment:AlignmentType.CENTER,spacing:{line:360}}),
+      blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),blank(),
+      p([new TextRun({text:'㈜피알원',font:F,size:COVER})],{alignment:AlignmentType.CENTER,spacing:{line:360}}),
+      p([mark(corp,{size:COVER})],{alignment:AlignmentType.CENTER,spacing:{line:360}}),
+      new Paragraph({pageBreakBefore:true,children:[run('')],spacing:{line:200}}),
+      para(['㈜피알원(이하 "갑"이라 한다)과 ',m(corp),'(이하 "을"이라 한다)은 ',m(performer),'(이하 "출연자"라 한다)의 출연채널 ',m(channel),'(이하 "채널"이라 한다)에서 제작하는 입력한 브랜드 또는 광고주(이하 "브랜드"라 한다)의 광고물(이하 "콘텐츠"라 한다)을 재편집 및 가공, 2차 활용한 콘텐츠의 광고 활용 업무와 관련하여 아래와 같이 계약을 체결하고 신의성실의 원칙에 따라 성실히 이행할 것을 약정한다.'],{spacing:{line:380,before:80,after:300},alignment:AlignmentType.JUSTIFIED}),
+      divider(),
+      artTitle(1,'목적'),p([run('본 계약은 "갑"의 의뢰로 "출연자"가 출연한 유튜브 콘텐츠의 2차 활용 라이선스 협의에 그 목적이 있다.')],{indent:{left:220},spacing:{line:340}}),
+      artTitle(2,'활용 내용'),
+      itemR(1,['활용 콘텐츠: ',m(contentName)]),
+      itemR(2,['활용 기간: ',m(startDate),' ~ ',m(endDate),' *기간 연장 시 사전 별도 협의']),
+      itemR(3,['활용 채널: ',m(useChannel),'에 한정되며, 커머스(썸네일, 상세페이지 등 구매연관) 사용 ',m(commerce),'.']),
+      itemR(4,['사용 범위: ',m(scope),' ("출연자"의 명칭은 \'',m(alias),'\'로 사용)']),
+      artTitle(3,'준수사항'),
+      itemR(1,['본 계약기간은 계약 체결일부터 ',m(endDate),'까지로 한다. 단, 활용기간 연장 시 사전 별도 협의를 진행한다.']),
+      item(2,'"갑"은 제작사가 제공한 "출연자"의 출연 영상을 재편집하여 광고물을 제작할 수 있다. 단, 해당 광고물은 "을"의 승인 하에 집행한다.'),
+      item(3,'"갑"은 "을"의 정당하고 합리적인 광고물 수정요청이 있을 경우 이를 최대한 반영하도록 한다.'),
+      item(4,'본 계약기간 중 "출연자"는 "브랜드"의 동종 업종 경쟁 업체의 광고 계약 및 행사 등에 제한을 받지 않는다.'),
+      artTitle(4,'대금지급'),
+      itemR(1,['"갑"은 "콘텐츠"의 2차활용에 대하여 "을"에게 대금 ',m(amtKor),'(\\',m(formatNum(amt)),'/VAT별도)을 지급한다.']),
+      itemR(2,['"을"은 ',m(taxDate),josa(taxDate,'으로/로'),' "갑"에게 세금계산서를 발행한다.']),
+      itemR(3,['"갑"은 ',m(payCond),timeParticle(payCond),' 본 조 제1항에 따른 대금을 "을"의 지정계좌로 지급한다.']),
+      tbl([dRow(['은행명',m(bank)],[2200,6600]),dRow(['계좌번호',m(acc)],[2200,6600]),dRow(['예금주명',m(dep)],[2200,6600])]),
+      artTitle(5,'계약의 해제 및 해지'),
+      item(1,'당사자 일방이 의무를 위반하거나 불성실하게 이행할 경우, 상대방은 시정을 요구할 수 있으며, 7일 이내 시정이 없는 경우 서면통지로써 계약을 해제 또는 해지할 수 있다.'),
+      item(2,'(가)압류·파산·영업정지·어음수표 지급정지·사회적 물의 발생 시 즉시 해제·해지할 수 있다.'),
+      artTitle(6,'분쟁해결 및 합의관할'),
+      item(1,'미정 사항 또는 해석 다툼은 관계 법령 및 일반 상관례에 따라 상호협의로 해결한다.'),
+      item(2,'협의에도 불구하고 분쟁이 해결되지 않을 경우 서울중앙지방법원을 합의관할법원으로 한다.'),
+      blank(),
+      p([run('상기 내용의 계약체결을 증명하기 위해 계약서를 2통 작성하여 "갑"과 "을"은 기명 날인한 후 각 1부씩 보관하기로 한다.')],{alignment:AlignmentType.CENTER,spacing:{line:340}}),
+      p([mark(date)],{alignment:AlignmentType.CENTER,spacing:{before:160,line:340}}),blank(),
+      new Table({width:{size:8800,type:WidthType.DXA},columnWidths:[4400,4400],rows:[
+        new TableRow({children:[
+          sign('(갑)',['회사명  : ㈜피알원','주    소 : 서울특별시 중구 마른내로 27, 11층(초동, 타워107)','사업자등록번호 : 110-81-75199','대표이사 : 조 재 형, 이 백 수 (인)']),
+          sign('(을)',[
+            ['상호명  : ',m(corp)],
+            ['주    소 : ',m(addr)],
+            ['사업자등록번호 : ',m(biz)],
+            ['대표이사 : ',m(ceo),' (인)']
+          ])
+        ]})
+      ]})
+    ];
+  }
+
+  const doc=new Document({
+    styles:{default:{document:{run:{font:F,size:SB},paragraph:{spacing:{line:340}}}}},
+    sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,bottom:1440,left:1440,right:1440}}},children}]
+  });
+  const blob=await Packer.toBlob(doc);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+// ═══════════════════════════════════════════════════
+// COPY / RESET
+// ═══════════════════════════════════════════════════
+function copyPreview(){
+  const el=document.getElementById('preview-content');
+  navigator.clipboard.writeText(el.innerText).then(()=>{
+    const btn=event.currentTarget;const o=btn.innerHTML;
+    btn.innerHTML='✅ 복사됨';setTimeout(()=>btn.innerHTML=o,2000);
+  });
+}
+function resetForm(t){
+  document.querySelectorAll('#tab-'+t+' input, #tab-'+t+' select').forEach(el=>{
+    if(el.type==='date') el.value='';
+    else if(!el.readOnly) el.value=el.defaultValue||'';
+  });
+  setKolType('individual'); setPayType('lump'); setRestrict(true);
+  rp();
+}
+
+// ═══════════════════════════════════════════════════
+// FILE PARSING (REVIEWER)
+// ═══════════════════════════════════════════════════
+function handleRevDrop(e){e.preventDefault();document.getElementById('rev-upzone').classList.remove('over');const f=e.dataTransfer.files[0];if(f)processRevFile(f);}
+function handleRevFile(e){const f=e.target.files[0];if(f)processRevFile(f);}
+
+async function processRevFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!['docx','pdf'].includes(ext)){alert('DOCX 또는 PDF 파일만 지원합니다.');return;}
+  document.getElementById('rev-upzone').style.display='none';
+  document.getElementById('rev-file-loaded').classList.add('hidden');
+  document.getElementById('rev-parsing').classList.remove('hidden');
+  document.getElementById('rev-analyze-btn').disabled=true;
+  try{
+    let text='';
+    if(ext==='docx'){const ab=await file.arrayBuffer();const r=await mammoth.extractRawText({arrayBuffer:ab});text=r.value;}
+    else{
+      if(typeof pdfjsLib==='undefined')throw new Error('PDF 라이브러리 로드 실패');
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const ab=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+      for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const c=await pg.getTextContent();text+=c.items.map(x=>x.str).join(' ')+'\n';}
+    }
+    revText=text.trim();
+    document.getElementById('rev-parsing').classList.add('hidden');
+    document.getElementById('rev-file-loaded').classList.remove('hidden');
+    document.getElementById('rev-file-icon').textContent=ext==='pdf'?'📕':'📘';
+    document.getElementById('rev-file-name').textContent=file.name;
+    document.getElementById('rev-file-meta').textContent=`${ext.toUpperCase()} · ${(file.size/1024).toFixed(1)}KB · ${revText.length.toLocaleString()}자 추출`;
+    document.getElementById('rev-text-preview').textContent=revText.slice(0,500)+(revText.length>500?'\n...(이하 생략)':'');
+    document.getElementById('rev-analyze-btn').disabled=false;
+    document.getElementById('rev-reset-btn').classList.remove('hidden');
+  }catch(err){
+    document.getElementById('rev-parsing').classList.add('hidden');
+    document.getElementById('rev-upzone').style.display='block';
+    alert('파일 읽기 오류: '+err.message);
+  }
+}
+
+function resetReview(){
+  revText='';
+  document.getElementById('rev-upzone').style.display='block';
+  document.getElementById('rev-file-loaded').classList.add('hidden');
+  document.getElementById('rev-reset-btn').classList.add('hidden');
+  document.getElementById('rev-analyze-btn').disabled=true;
+  document.getElementById('rev-copy-btn').classList.add('hidden');
+  document.getElementById('rev-download-btn')?.classList.add('hidden');
+  document.getElementById('rev-result').innerHTML='<div class="empty-state"><div class="empty-icon">⚖️</div><p>계약서 파일을 업로드하고<br><strong>조항 검토 시작</strong>을 누르면<br>결과가 여기에 표시됩니다.</p></div>';
+  document.getElementById('rev-file').value='';
+}
+
+
+// 조사/계약 주체 표기 자동 검수
+function getJosaIssues(text, limit=12) {
+  const src = String(text||'').replace(/\s+/g,' ');
+  const issues = [];
+  const re = /(["'“”‘’]?[가-힣]{1,24}["'“”‘’]?)(은|는|이|가|을|를)(?=[\s.,;:!?\)\]\}"'“”‘’]|$)/g;
+  let m;
+  while((m = re.exec(src)) && issues.length < limit){
+    const target = m[1];
+    const particle = m[2];
+    const pair = (particle==='은'||particle==='는') ? '은/는' : (particle==='이'||particle==='가') ? '이/가' : '을/를';
+    const expected = josa(target, pair);
+    if(particle !== expected){
+      issues.push(`${target}${particle} → ${target}${expected}`);
+    }
+  }
+  return issues;
+}
+function getPartyQuoteIssues(text, limit=12) {
+  const src = String(text||'').replace(/\s+/g,' ');
+  const issues = [];
+  const quotes = new Set(['"',"'",'“','”','‘','’']);
+  const isWord = ch => /[가-힣A-Za-z0-9]/.test(ch||'');
+  const suffixRe = /^(은|는|이|가|을|를|의|에게|으로|로|와|과|도|이나|나|및|,|\.|\s|$)/;
+  for(let i=0;i<src.length && issues.length<limit;i++){
+    const ch = src[i];
+    if(ch!=='갑' && ch!=='을') continue;
+    const prev = src[i-1]||'';
+    const next = src[i+1]||'';
+    if(quotes.has(prev) && quotes.has(next)) continue;
+    // 일반 단어 내부의 '갑/을'이나 목적격 조사 '을'은 제외하고, 계약 주체로 쓰인 경우만 잡는다.
+    if(isWord(prev)) continue;
+    if(!suffixRe.test(src.slice(i+1))) continue;
+    const ctx = src.slice(Math.max(0,i-8), Math.min(src.length,i+12)).trim();
+    issues.push(`${ctx} → "${ch}" 표기 필요`);
+  }
+  return issues;
+}
+
+// ═══════════════════════════════════════════════════
+// LOCAL CHECKLIST (NO API)
+// ═══════════════════════════════════════════════════
+const CHECKLIST=[
+  {id:'c1',art:'제1조',name:'목적 조항',level:'필수',
+   check:t=>/상호이익|제반\s*사항|권리의무/.test(t)?'ok':'miss',
+   std:'계약 당사자의 권리의무 규정 및 상호이익 증진 목적 명시'},
+  {id:'c2',art:'제2조',name:'관련법규·거래질서 준수',level:'필수',
+   check:t=>/관련법규.*준수|금품.*향응|거래질서/.test(t)?'ok':'miss',
+   std:'관련법규 준수, 금품·향응 금지 명시'},
+  {id:'c3',art:'제3조',name:'가이드라인 외 수정 불가',level:'필수',
+   check:t=>/가이드라인.*벗어난.*수정.*않|가이드.*외.*수정.*불가/.test(t)?'ok':'miss',
+   std:'"갑"은 협의된 가이드라인 외 수정요청 불가'},
+  {id:'c4',art:'제3조',name:'재촬영 요구 불가',level:'필수',
+   check:t=>/재촬영.*요구.*않|재촬영.*불가/.test(t)?'ok':'miss',
+   std:'"갑"은 사전 협의된 기획안 기반 촬영물에 재촬영 요구 불가'},
+  {id:'c5',art:'제4조',name:'수정 요청 횟수 (1회)',level:'필수',
+   check:t=>{
+     if(/1회\s*수정\s*요청|수정\s*요청.*1회/.test(t))return'ok';
+     if(/\d+회.*수정\s*요청|수정\s*요청.*\d+회/.test(t)){const m=t.match(/(\d+)회.*수정|수정.*(\d+)회/);return'diff:수정 요청 '+(m&&(m[1]||m[2]))+'회로 명시';}
+     return'miss';},
+   std:'"갑"은 1회 수정 요청 가능'},
+  {id:'c6',art:'제4조',name:'콘텐츠 삭제 금지 기간',level:'필수',
+   check:t=>{
+     if(/6개월|12개월/.test(t)&&/삭제/.test(t))return'ok';
+     const m=t.match(/(\d+)개월.*삭제|삭제.*(\d+)개월/);
+     if(m){const mo=m[1]||m[2];return'diff:'+mo+'개월로 명시';}
+     return'miss';},
+   std:'콘텐츠 게시 후 6~12개월 삭제·편집 금지'},
+  {id:'c7',art:'제4조',name:'경쟁사 광고 제한',level:'권고',
+   check:t=>/타사.*광고.*업로드.*없|경쟁.*광고.*제한|다이어트.*타사/.test(t)?'ok':'miss',
+   std:'업로드 후 일정 기간 동종 카테고리 타사 광고 금지'},
+  {id:'c8',art:'제5조',name:'지적재산권 "을" 귀속',level:'필수',
+   check:t=>/지적재산권.*소유권.*을|을.*지적재산권/.test(t)?'ok':'miss',
+   std:'콘텐츠 지적재산권·소유권은 "을"에게 귀속'},
+  {id:'c9',art:'제5조',name:'2차 활용 "을" 동의 필요',level:'필수',
+   check:t=>/을.*동의.*2차\s*활용|2차\s*활용.*을.*동의/.test(t)?'ok':'miss',
+   std:'"을"의 동의 하에만 2차 활용 가능'},
+  {id:'c10',art:'제6조',name:'대금 지급 시기',level:'필수',
+   check:t=>{
+     if(/익월\s*말|세금계산서.*익월/.test(t))return'ok';
+     if(/\d+일\s*이내.*지급|지급.*\d+일/.test(t)){const m=t.match(/(\d+)일.*지급/);return'diff:지급 기한 '+(m&&m[1])+'일로 명시';}
+     return'miss';},
+   std:'세금계산서 발행 후 익월말(법인) 또는 업로드 후 익월말(개인) 지급'},
+  {id:'c11',art:'제8조',name:'양도금지',level:'필수',
+   check:t=>/제3자.*양도.*아니|양도.*금지/.test(t)?'ok':'miss',
+   std:'사전 서면 승낙 없이 계약상 권리·의무 양도 금지'},
+  {id:'c12',art:'제9조',name:'해지 전 시정 기간 (7일)',level:'필수',
+   check:t=>{
+     if(/7일.*시정|시정.*7일/.test(t))return'ok';
+     if(/\d+일.*시정|시정.*\d+일/.test(t)){const m=t.match(/(\d+)일.*시정/);return'diff:시정 기간 '+(m&&m[1])+'일로 명시';}
+     return'miss';},
+   std:'의무 위반 후 7일 이내 시정 요구 후 해지'},
+  {id:'c13',art:'제9조',name:'브랜드 결함 시 "을" 해지 권한',level:'필수',
+   check:t=>/브랜드.*결함.*해지|제품.*문제.*삭제|중대한.*결함/.test(t)?'ok':'miss',
+   std:'"갑" 브랜드/제품 중대 결함 발생 시 "을"의 즉시 해지 권한'},
+  {id:'c14',art:'제10조',name:'관련 법령 준수 명시',level:'필수',
+   check:t=>/저작권법.*상표법|표시.*광고.*공정|광고심사/.test(t)?'ok':'miss',
+   std:'저작권법, 상표법, 표시광고법, 광고심사 지침 등 준수'},
+  {id:'c15',art:'제10조',name:'갑 귀책 위약금 (기획안 후)',level:'필수',
+   check:t=>{
+     if(/기획안.*50%|50%.*기획안/.test(t))return'ok';
+     if(/기획안.*\d+%|\d+%.*기획안/.test(t)){const m=t.match(/기획안.*(\d+)%|(\d+)%.*기획안/);return'diff:기획안 후 위약금 '+(m&&(m[1]||m[2]))+'%로 명시';}
+     return'miss';},
+   std:'기획안 전달 후 계약금액의 50%'},
+  {id:'c16',art:'제10조',name:'갑 귀책 위약금 (콘텐츠 후)',level:'필수',
+   check:t=>{
+     if(/콘텐츠.*100%|초안.*100%|제작.*70%|70%.*콘텐츠/.test(t))return'ok';
+     if(/콘텐츠.*\d+%|초안.*\d+%|제작.*\d+%/.test(t)){const m=t.match(/(콘텐츠|초안|제작).*(\d+)%/);return'diff:콘텐츠 후 위약금 '+(m&&m[2])+'%로 명시';}
+     return'miss';},
+   std:'콘텐츠 초안/제작 후 계약금액의 100% (또는 70%)'},
+  {id:'c17',art:'제11조',name:'비밀유지 (계약 종료 후 포함)',level:'필수',
+   check:t=>/비밀유지|영업비밀.*유출.*금지/.test(t)?'ok':'miss',
+   std:'계약기간 중 및 종료 후 영업비밀 유출 금지'},
+  {id:'c18',art:'제12조',name:'서울중앙지방법원 관할',level:'필수',
+   check:t=>{
+     if(/서울중앙지방법원/.test(t))return'ok';
+     if(/지방법원/.test(t)){const m=t.match(/([가-힣]+지방법원)/);return'diff:'+(m&&m[1])+'으로 명시';}
+     return'miss';},
+   std:'서울중앙지방법원을 합의관할법원으로 함'},
+  {id:'c19',art:'문장검수',name:'조사 사용(을/를/이/가)',level:'권고',
+   check:t=>{const issues=getJosaIssues(t); return issues.length ? 'diff:'+issues.slice(0,6).join(' / ') : 'ok';},
+   std:'입력값 뒤 조사(을/를/이/가, 은/는)는 받침 유무에 맞게 자연스럽게 사용'},
+  {id:'c20',art:'문장검수',name:'계약 주체 인용부호',level:'필수',
+   check:t=>{const issues=getPartyQuoteIssues(t); return issues.length ? 'diff:'+issues.slice(0,6).join(' / ') : 'ok';},
+   std:'계약 주체는 갑/을 단독 표기가 아니라 "갑", "을"처럼 인용부호를 붙여 표기'},
+];
+
+// 추가 조항 의심 패턴
+const EXTRA_PATTERNS=[
+  {name:'독점 계약 조항',re:/독점|exclusive|배타/i,desc:'독점성 관련 조항이 포함되어 있습니다. 표준 계약에 없는 내용입니다.'},
+  {name:'성과 보장 조항',re:/성과.*보장|조회수.*보장|뷰.*보장/,desc:'성과/조회수 보장 조항이 포함되어 있습니다. 이행 불가 시 분쟁 위험이 있습니다.'},
+  {name:'저작권 양도 조항',re:/저작권.*양도|저작권.*갑|지적재산권.*갑/,desc:'"을"의 저작권을 "갑"에게 양도하는 조항이 의심됩니다. 표준에서는 "을" 귀속입니다.'},
+  {name:'환수/환불 조항',re:/환수|환불|성과.*미달/,desc:'성과 미달 시 대금 환수/환불 조항이 포함되어 있습니다. 상세 내용 확인이 필요합니다.'},
+  {name:'무한 책임 조항',re:/무한.*책임|무제한.*손해/,desc:'무한 책임 또는 무제한 손해배상 조항이 포함될 수 있습니다.'},
+  {name:'일방적 계약 변경',re:/갑.*일방.*변경|일방적.*수정.*권리/,desc:'"갑"의 일방적 계약 내용 변경 권한이 포함될 수 있습니다.'},
+];
+
+function runChecklist(){
+  if(!revText){alert('파일을 먼저 업로드해주세요.');return;}
+  const t=revText;
+  let ok=0,diff=0,miss=0,extra=[];
+  const rows=CHECKLIST.map(c=>{
+    const res=c.check(t);
+    let badge,detail='';
+    if(res==='ok'){ok++;badge='<span class="badge b-ok">✅ 일치</span>';}
+    else if(res==='miss'){miss++;badge='<span class="badge b-miss">❌ 누락</span>';}
+    else{diff++;const d=res.replace('diff:','');badge=`<span class="badge b-diff">⚠️ 수치 상이</span>`;detail=`<br><small style="color:var(--yellow)">→ ${d}</small>`;}
+    return`<tr><td style="font-size:11px;color:var(--light)">${c.art}</td><td><strong>${c.name}</strong>${detail}</td><td style="font-size:11px;color:var(--sub)">${c.std}</td><td>${badge}</td><td><span class="badge" style="background:#f0f3fa;color:var(--sub);border:1px solid var(--border)">${c.level}</span></td></tr>`;
+  }).join('');
+
+  // extra patterns
+  EXTRA_PATTERNS.forEach(p=>{if(p.re.test(t))extra.push(p);});
+
+  const extraHtml=extra.length?`<div style="margin-top:18px"><div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px">➕ 추가 조항 의심 (${extra.length}건)</div>${extra.map(e=>`<div style="background:var(--blue-l);border:1px solid #b0d0ea;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px"><strong>${e.name}</strong><br><span style="color:var(--sub)">${e.desc}</span></div>`).join('')}</div>`:''
+
+  const score=Math.round(ok/CHECKLIST.length*100);
+  const html=`
+<div class="summary-box">
+  <h4>📊 검토 요약</h4>
+  <div>총 ${CHECKLIST.length}개 표준 조항 대비 자동 체크 결과입니다.</div>
+  <div class="score-grid">
+    <div class="score-item"><div class="score-num" style="color:#5dde9a">${ok}</div><div class="score-label">일치</div></div>
+    <div class="score-item"><div class="score-num" style="color:#f0c040">${diff}</div><div class="score-label">수치 상이</div></div>
+    <div class="score-item"><div class="score-num" style="color:#f07070">${miss}</div><div class="score-label">누락</div></div>
+    <div class="score-item"><div class="score-num" style="color:#6ab0d8">${extra.length}</div><div class="score-label">추가 의심</div></div>
+  </div>
+</div>
+<table class="chk-table">
+<thead><tr><th style="width:60px">조항</th><th>항목</th><th>피알원 표준 기준</th><th style="width:110px">판정</th><th style="width:60px">중요도</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+${extraHtml}
+<div class="notice n-warn" style="margin-top:16px">
+  <span>⚠️</span><span>자동 키워드 분석 결과입니다. 수치 상이·누락 항목은 원문을 직접 확인하고, 최종 판단은 담당자가 수행하세요.</span>
+</div>`;
+  document.getElementById('rev-result').innerHTML=html;
+  document.getElementById('rev-copy-btn').classList.remove('hidden');
+}
+
+function copyReview(){
+  const el=document.getElementById('rev-result');
+  navigator.clipboard.writeText(el.innerText).then(()=>{
+    const btn=event.currentTarget;const o=btn.innerHTML;
+    btn.innerHTML='✅ 복사됨';setTimeout(()=>btn.innerHTML=o,2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('c_date').value=new Date().toISOString().slice(0,10);
+  rp(); rps();
+});
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════
+// PR ONE v2 enhancements: cover-page preview, sensitive-data masking, colored correction output
+// ═══════════════════════════════════════════════════
+let lastReviewResults = [];
+let lastExtraResults = [];
+
+const PRONE_STANDARD_FIXES = {
+  c1:'제1조 (목적)\n본 계약은 “갑”의 요청에 따라 “을”이 “브랜드”의 “콘텐츠”를 제작하는 것과 관련된 필요한 제반 사항 및 계약 당사자의 권리의무를 규정하여 상호이익의 증진을 도모함을 목적으로 한다.',
+  c2:'제2조 (관련법규 및 거래질서 준수)\n1) “갑”과 “을”은 본 계약과 관련하여 관련법규를 준수하고, 공정하고 투명하게 계약을 이행한다.\n2) “을”은 본 계약을 이행함에 있어 “갑”의 임직원에게 금품, 향응제공 등 공정한 거래질서를 위반하는 행위를 하지 아니한다.\n3) “을”은 “갑”의 임직원이 전항의 행위를 요구하는 경우 이를 거절하고, 즉시 그 사실을 “갑”에게 통지하여야 한다.',
+  c3:'“갑”은 “을”에게 협의된 가이드라인에서 벗어난 내용에 대해서는 수정요청을 할 수 없다.',
+  c4:'“갑”은 사전 협의된 기획안을 토대로 진행 완료된 촬영물에 대해 재촬영을 요구할 수 없다.',
+  c5:'“을”은 “콘텐츠” 업로드 전 영상을 “갑”에게 공유하여야 하며, “갑”은 해당 영상에 대해 1회 수정 요청을 할 수 있다. 단, 가이드에서 벗어난 수정사항이나 제품 오기, 제품 효능 효과 오인 등 이미 “갑”이 요청한 수정사항이 반영되지 않은 경우에는 횟수와 관계없이 수정사항을 반영해야 한다.',
+  c6:'양 당사자의 동의 하에 “을”은 “채널”에 “콘텐츠”가 게시되고 난 뒤 6개월간 이를 삭제하거나 편집하여서는 아니되며, 게시된 “콘텐츠”는 “갑”이나 “을”의 일방적인 요구로 삭제할 수 없다.',
+  c7:'“을”은 “콘텐츠”가 업로드 되고 3개월 이내의 기간 동안 동종 또는 사전 합의한 경쟁 카테고리의 타사 제품 광고 콘텐츠를 업로드할 수 없다.',
+  c8:'본 계약에 의거하여 “을”의 업무수행에 따른 “콘텐츠”의 지적재산권 및 소유권은 “을”에게 있다.',
+  c9:'“갑”은 “을”의 동의 하에 “콘텐츠”를 재편집 및 가공, 2차 활용한 광고물로 사용할 수 있다. 2차 활용 광고물의 사용기간은 상호 협의한 일정과 비용에 맞춰 진행한다.',
+  c10:'개인 계약의 경우 최종 콘텐츠 업로드 후 익월 말일 이내, 법인 계약의 경우 세금계산서 발행일로부터 익월 말 이내 지급하는 것을 표준으로 한다.',
+  c11:'“갑”과 “을”은 상호간 상대방의 사전 서면 승낙을 받지 않고서는 본 계약상의 권리·의무에 대하여 이를 제3자에게 양도, 담보제공, 기타 여하한 처분행위를 하여서는 아니된다.',
+  c12:'본 계약의 당사자 일방이 본 계약에 규정된 자신의 의무를 위반하거나 불성실하게 이행할 경우, 상대방은 서면 또는 구두 유선으로 그 시정 또는 개선을 요구할 수 있으며, 그로부터 7일 이내에 귀책 당사자의 시정 또는 개선조치가 없는 경우에 상대방은 서면통지로써 본 계약을 해제 또는 해지할 수 있다.',
+  c13:'“갑”이 의뢰한 “브랜드”의 기업 이미지 및 홍보하는 제품에 대한 중대한 결함이나 문제가 발생할 경우 “을”은 “채널”에 업로드 된 “콘텐츠”를 즉시 삭제 및 본 계약을 해지할 수 있으며, 2차활용 광고물의 회수, 사용 중지 및 “브랜드” 관련 표시·사용 중지를 요청할 수 있다.',
+  c14:'“을”의 “콘텐츠” 제작에 있어, 저작권법, 상표법, 정보통신망 이용촉진 및 정보보호 등에 관한 법률, 표시 및 광고의 공정화에 관한 법률, 인터넷 광고심사 지침 등 관련 법률 및 가이드라인을 준수하여야 한다.',
+  c15:'“갑”의 일방적 사유로 인하여 계약을 해지 또는 해제할 경우, 기획안 전달 후에는 계약 금액의 50%를 해지일로부터 7일 이내 계약 위약금으로 지급한다.',
+  c16:'“갑”의 일방적 사유로 인하여 계약을 해지 또는 해제할 경우, 콘텐츠 초안 전달 후 또는 제작 후에는 계약 금액의 100%를 해지일로부터 7일 이내 계약 위약금으로 지급한다.',
+  c17:'“갑”과 “을”은 본 계약기간 중은 물론 본 계약의 종료나 해제 또는 해지 후, 본 계약의 계약 조건 및 이행 과정 전반 사항, 상대방의 기술정보, 영업비밀, 유통정보 및 기타 관련 자료 등을 상대방의 서면 동의 없이 제3자에게 유출하거나 본 계약의 이행 이외의 목적으로 이용하여서는 아니 된다.',
+  c18:'본 계약에서 정하지 않은 사항 또는 계약의 해석에 다툼이 있는 경우에는 관계 법령 또는 일반 상관례에 따라 상호협의로 원만히 해결하고, 협의에도 불구하고 분쟁이 해결되지 않을 경우에는 서울중앙지방법원을 합의관할법원으로 한다.',
+  c19:'문장 내 입력값 뒤 조사는 받침 유무에 맞게 자동 보정한다. 예: 계약서을 → 계약서를, 광고물을 → 광고물을, 콘텐츠가/이 등 문맥에 맞춰 수정한다.',
+  c20:'계약 주체는 모든 조항에서 "갑", "을" 형태로 인용부호를 붙여 표기한다. 예: 갑은 → "갑"은, 을에게 → "을"에게.'
+};
+
+function escapeHtml2(str){return (str||'').replace(/[&<>"]/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));}
+function maskSensitiveText(str){
+  return (str||'')
+    .replace(/\b\d{6}-\d{7}\b/g,'[주민등록번호 비식별]')
+    .replace(/\b\d{3}-\d{2}-\d{5}\b/g,'[사업자등록번호]')
+    .replace(/(계좌번호\s*[:：]?\s*)([0-9\-\s]{8,})/g,'$1[계좌번호 비식별]')
+    .replace(/(주\s*소\s*[:：]?\s*)([^\n]{8,})/g,'$1[주소 비식별]')
+    .replace(/(성\s*명\s*[:：]?\s*)([^\n\(]{2,})/g,'$1[성명 비식별] ')
+    .replace(/(예금주명\s*[:：]?\s*)([^\n]{2,})/g,'$1[예금주 비식별]')
+    .replace(/(은행명\s*[:：]?\s*)([^\n]{2,})/g,'$1[은행명 비식별]');
+}
+function enhanceCoverPreview(targetId){
+  const body=document.getElementById(targetId); if(!body || body.querySelector('.company-cover')) return;
+  const title=body.querySelector('.c-title-table');
+  const date=body.querySelector('.c-date');
+  const parties=[...body.querySelectorAll('.c-party')];
+  const intro=body.querySelector('.c-intro');
+  if(!title||!date||parties.length<2||!intro) return;
+  const cover=document.createElement('div'); cover.className='company-cover';
+  cover.appendChild(title);
+  const dateBlock=document.createElement('div'); dateBlock.className='cover-date-block';
+  dateBlock.appendChild(date); cover.appendChild(dateBlock);
+  const group=document.createElement('div'); group.className='cover-party-group';
+  parties.forEach(p=>group.appendChild(p)); cover.appendChild(group);
+  const rest=document.createElement('div'); rest.className='contract-body-page';
+  while(body.firstChild){rest.appendChild(body.firstChild)}
+  body.innerHTML=''; body.appendChild(cover); body.appendChild(rest);
+}
+if(typeof rp==='function'){
+  const _rp=rp;
+  rp=function(){_rp(); enhanceCoverPreview('preview-content');};
+}
+if(typeof rps==='function'){
+  const _rps=rps;
+  rps=function(){_rps(); enhanceCoverPreview('preview-secondary');};
+}
+
+function getReviewAnalysis(){
+  const t=revText||'';
+  let ok=0,diff=0,miss=0;
+  const items=CHECKLIST.map(c=>{
+    const res=c.check(t);
+    let status='ok', detail='';
+    if(res==='ok'){ok++;}
+    else if(res==='miss'){miss++;status='miss';}
+    else{diff++;status='diff';detail=res.replace('diff:','');}
+    return {...c,status,detail,fix:PRONE_STANDARD_FIXES[c.id]||c.std};
+  });
+  const extra=[]; EXTRA_PATTERNS.forEach(p=>{if(p.re.test(t))extra.push(p);});
+  return {items,extra,ok,diff,miss,score:Math.round(ok/CHECKLIST.length*100)};
+}
+function findClauseText(text, art){
+  const n=(art||'').replace(/[^0-9]/g,''); if(!n) return '';
+  const re=new RegExp(`제\\s*${n}\\s*조[\\s\\S]*?(?=제\\s*${parseInt(n)+1}\\s*조|$)`);
+  const m=(text||'').match(re); return m?m[0].trim():'';
+}
+function buildAnnotatedHtml(analysis){
+  const source=maskSensitiveText(revText);
+  const grouped={};
+  analysis.items.forEach(it=>{ if(it.status!=='ok'){(grouped[it.art]||(grouped[it.art]=[])).push(it);} });
+  const missing=analysis.items.filter(it=>it.status==='miss');
+  let html='<div class="annotated-doc"><div class="annotated-head">🖍 원문 체크 & 피알원 표준 수정 제안</div>';
+  if(!Object.keys(grouped).length && !analysis.extra.length){
+    html+='<div class="annotated-clause ok"><div class="ann-title">✅ 주요 표준 조항이 모두 일치합니다.</div></div>';
+  }
+  Object.entries(grouped).forEach(([art,items])=>{
+    const clause=maskSensitiveText(findClauseText(source,art)) || '해당 조항 원문 위치를 자동 특정하지 못했습니다. 전체 원문에서 직접 확인해주세요.';
+    const cls=items.some(i=>i.status==='miss')?'miss':'diff';
+    html+=`<div class="annotated-clause ${cls}"><div class="ann-title">${cls==='miss'?'❌':'⚠️'} ${art} · ${items.map(i=>i.name).join(', ')}</div><div class="ann-text">${escapeHtml2(clause)}</div>`;
+    items.forEach(i=>{
+      const boxCls=i.status==='miss'?'fix-box miss-box':'fix-box';
+      html+=`<div class="${boxCls}"><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" class="rev-fix-check" value="${i.id}" checked><span><strong>피알원 표준 수정안</strong>${i.detail?` <span class="diff-text">${escapeHtml2(i.detail)}</span>`:''}<br>${escapeHtml2(i.fix).replace(/\n/g,'<br>')}</span></label></div>`;
+    });
+    html+='</div>';
+  });
+  analysis.extra.forEach(e=>{
+    html+=`<div class="annotated-clause extra"><div class="ann-title">➕ 추가조항 의심 · ${escapeHtml2(e.name)}</div><div class="fix-box extra-box">${escapeHtml2(e.desc)}<br>원문에서 해당 조항을 확인하고, 필요 시 삭제 또는 별도 승인 절차를 거치세요.</div></div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+function runChecklist(){
+  if(!revText){alert('파일을 먼저 업로드해주세요.');return;}
+  const analysis=getReviewAnalysis();
+  lastReviewResults=analysis.items; lastExtraResults=analysis.extra;
+  const rows=analysis.items.map(c=>{
+    let badge='';
+    if(c.status==='ok') badge='<span class="badge b-ok">✅ 일치</span>';
+    else if(c.status==='miss') badge='<span class="badge b-miss">❌ 누락</span>';
+    else badge='<span class="badge b-diff">⚠️ 수치 상이</span>';
+    const detail=c.detail?`<br><small style="color:var(--yellow)">→ ${escapeHtml2(c.detail)}</small>`:'';
+    const check=c.status==='ok'?'':'<input type="checkbox" class="rev-fix-check" value="'+c.id+'" checked title="교정본에 포함">';
+    return`<tr><td class="review-check">${check}</td><td style="font-size:11px;color:var(--light)">${c.art}</td><td><strong>${escapeHtml2(c.name)}</strong>${detail}</td><td style="font-size:11px;color:var(--sub)">${escapeHtml2(c.std)}</td><td>${badge}</td><td><span class="badge" style="background:#f0f3fa;color:var(--sub);border:1px solid var(--border)">${c.level}</span></td></tr>`;
+  }).join('');
+  const extraHtml=analysis.extra.length?`<div style="margin-top:18px"><div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px">➕ 추가 조항 의심 (${analysis.extra.length}건)</div>${analysis.extra.map(e=>`<div style="background:var(--blue-l);border:1px solid #b0d0ea;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px"><strong>${escapeHtml2(e.name)}</strong><br><span style="color:var(--sub)">${escapeHtml2(e.desc)}</span></div>`).join('')}</div>`:'';
+  const html=`
+<div class="summary-box">
+  <h4>📊 검토 요약</h4>
+  <div>총 ${CHECKLIST.length}개 표준 조항 대비 자동 체크 결과입니다. 체크된 항목만 유색 교정본에 포함됩니다.</div>
+  <div class="score-grid">
+    <div class="score-item"><div class="score-num" style="color:#5dde9a">${analysis.ok}</div><div class="score-label">일치</div></div>
+    <div class="score-item"><div class="score-num" style="color:#f0c040">${analysis.diff}</div><div class="score-label">수치 상이</div></div>
+    <div class="score-item"><div class="score-num" style="color:#f07070">${analysis.miss}</div><div class="score-label">누락</div></div>
+    <div class="score-item"><div class="score-num" style="color:#6ab0d8">${analysis.extra.length}</div><div class="score-label">추가 의심</div></div>
+  </div>
+</div>
+<table class="chk-table">
+<thead><tr><th style="width:34px">선택</th><th style="width:60px">조항</th><th>항목</th><th>피알원 표준 기준</th><th style="width:110px">판정</th><th style="width:60px">중요도</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+${extraHtml}
+${buildAnnotatedHtml(analysis)}
+<div class="notice n-warn" style="margin-top:16px"><span>⚠️</span><span>자동 키워드 분석 결과입니다. 원문 체크와 유색 교정본은 검토 보조용이며, 최종 판단은 담당자가 원문과 함께 확인해야 합니다.</span></div>`;
+  document.getElementById('rev-result').innerHTML=html;
+  document.getElementById('rev-copy-btn').classList.remove('hidden');
+  document.getElementById('rev-download-btn').classList.remove('hidden');
+}
+
+function getSelectedReviewIds(){
+  const checked=[...document.querySelectorAll('#rev-result .rev-fix-check:checked')].map(x=>x.value);
+  return [...new Set(checked)];
+}
+async function downloadCorrectedDocx(){
+  if(!window.docx){alert('DOCX 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');return;}
+  if(!lastReviewResults.length){runChecklist();}
+  const selected=getSelectedReviewIds();
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,BorderStyle,ShadingType,AlignmentType}=window.docx;
+  const F='맑은 고딕'; const base=21;
+  const run=(text,opt={})=>new TextRun({text,font:F,size:base,...opt});
+  const p=(children,opt={})=>new Paragraph({children,spacing:{line:320,before:80,after:80},...opt});
+  const heading=(text)=>p([run(text,{bold:true,size:28,color:'1A2744'})],{spacing:{before:240,after:160}});
+  const subheading=(text,color='1A2744')=>p([run(text,{bold:true,size:23,color})],{spacing:{before:180,after:90}});
+  const shade=(text,fill,color='1e2a45')=>new Table({width:{size:9000,type:WidthType.DXA},rows:[new TableRow({children:[new TableCell({width:{size:9000,type:WidthType.DXA},shading:{fill,type:ShadingType.CLEAR},borders:{top:{style:BorderStyle.SINGLE,size:4,color:'DDDDDD'},bottom:{style:BorderStyle.SINGLE,size:4,color:'DDDDDD'},left:{style:BorderStyle.SINGLE,size:4,color:'DDDDDD'},right:{style:BorderStyle.SINGLE,size:4,color:'DDDDDD'}},margins:{top:100,bottom:100,left:150,right:150},children:String(text||'').split('\n').map(line=>p([run(line,{color})],{spacing:{line:300,before:0,after:0}}))})]})]});
+  const children=[];
+  children.push(heading('피알원 표준양식 검토 · 유색 교정본'));
+  children.push(p([run('※ 업로드 원문에서 주민등록번호, 계좌번호, 주소 등 민감정보는 자동 비식별 처리했습니다.',{color:'6B7280'})]));
+  const analysis=getReviewAnalysis();
+  children.push(shade(`검토 요약\n일치 ${analysis.ok}건 / 수치 상이 ${analysis.diff}건 / 누락 ${analysis.miss}건 / 추가조항 의심 ${analysis.extra.length}건`, 'EEF2FA'));
+  children.push(subheading('1. 선택한 교정 항목'));
+  const selectedItems=analysis.items.filter(i=>selected.includes(i.id)&&i.status!=='ok');
+  if(!selectedItems.length){children.push(p([run('선택된 교정 항목이 없습니다.') ]));}
+  selectedItems.forEach(i=>{
+    const color=i.status==='miss'?'C0392B':'D68910';
+    children.push(subheading(`${i.status==='miss'?'[누락]':'[상이]'} ${i.art} · ${i.name}`, color));
+    if(i.detail) children.push(p([run('원문 판정: '+i.detail,{color:'D68910'})]));
+    children.push(shade('피알원 표준 수정안\n'+(i.fix||i.std), i.status==='miss'?'FDECEA':'FEF3C7', i.status==='miss'?'8A2C22':'6E4E00'));
+  });
+  if(analysis.extra.length){
+    children.push(subheading('2. 추가조항 의심', '2471A3'));
+    analysis.extra.forEach(e=>children.push(shade(`${e.name}\n${e.desc}\n→ 원문에서 해당 조항을 확인하고, 필요 시 삭제 또는 별도 승인 절차를 거치세요.`, 'EAF3FB','235B7A')));
+  }
+  children.push(subheading('3. 원문 비식별본'));
+  const sanitized=maskSensitiveText(revText).split(/\n{2,}|(?=제\s*\d+\s*조)/).filter(Boolean).slice(0,80);
+  sanitized.forEach(block=>children.push(p([run(block.trim())],{spacing:{line:300,before:60,after:60}})));
+  const doc=new Document({styles:{default:{document:{run:{font:F,size:base},paragraph:{spacing:{line:320}}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,bottom:1440,left:1440,right:1440}}},children}]});
+  const blob=await Packer.toBlob(doc); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='PRONE_계약서_유색_교정본.docx'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+// Run enhanced previews once after load.
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{try{rp();rps();}catch(e){}},0);});
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════════════
+// PR ONE v5: original DOCX inline red correction output
+// - Keeps the uploaded Word document structure and inserts red correction paragraphs
+//   directly near the clause that needs review.
+// ═══════════════════════════════════════════════════
+let revOriginalDocxBuffer = null;
+let revOriginalDocxName = '';
+
+// Keep the report-style fallback from v4 for PDFs or when JSZip is unavailable.
+const downloadReviewReportDocxFallback = window.downloadCorrectedDocx;
+
+const INLINE_TARGET_PATTERNS = {
+  c1:[/\(목적\)/,/상호이익.*목적/],
+  c2:[/관련법규|거래질서|금품.*향응/],
+  c3:[/가이드라인.*벗어난.*수정|수정요청.*가이드라인|정보와 자료/],
+  c4:[/재촬영|촬영물/],
+  c5:[/1회.*수정|수정.*1회|영상을.*공유/],
+  c6:[/\d+개월간.*삭제|삭제하거나\s*편집|게시되고.*개월/],
+  c7:[/타사.*제품.*광고|경쟁사|동종.*카테고리/],
+  c8:[/지적재산권.*소유권|소유권은.*을|업무수행에 따른.*콘텐츠/],
+  c9:[/2차\s*활용.*동의|동의.*2차\s*활용|재편집.*가공/],
+  c10:[/익월\s*말|세금계산서.*익월|지정계좌|대금을 지급/],
+  c11:[/제3자.*양도|양도.*금지|담보제공/],
+  c12:[/7일.*시정|시정.*7일|해제 또는 해지/],
+  c13:[/중대한.*결함|브랜드.*결함|제품.*문제.*삭제/],
+  c14:[/저작권법.*상표법|표시.*광고|광고심사/],
+  c15:[/기획안.*50%|50%.*기획안|기획안 전달 후/],
+  c16:[/콘텐츠.*100%|초안.*100%|콘텐츠 초안 전달 후|제작 후/],
+  c17:[/비밀유지|영업비밀|기밀정보/],
+  c18:[/서울중앙지방법원|합의관할|분쟁이 해결되지/],
+  c19:[/을\/를|이\/가|조사|비문|자연스럽게/],
+  c20:[/갑|을|계약 주체|인용부호/]
+};
+const INLINE_FALLBACK_PATTERNS = [/상기 내용의 계약체결|\(갑\)|회사명\s*:/];
+
+function setReviewDownloadButtonLabel(ext){
+  const btn=document.getElementById('rev-download-btn');
+  if(!btn) return;
+  btn.textContent = ext === 'docx' ? '원본서식 빨간 교정 DOCX' : '유색 교정 리포트 DOCX';
+}
+
+// Override the original parser so we can keep the uploaded DOCX bytes for XML-level correction output.
+processRevFile = async function(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!['docx','pdf'].includes(ext)){alert('DOCX 또는 PDF 파일만 지원합니다.');return;}
+  revOriginalDocxBuffer = null;
+  revOriginalDocxName = '';
+  setReviewDownloadButtonLabel(ext);
+  document.getElementById('rev-upzone').style.display='none';
+  document.getElementById('rev-file-loaded').classList.add('hidden');
+  document.getElementById('rev-parsing').classList.remove('hidden');
+  document.getElementById('rev-analyze-btn').disabled=true;
+  document.getElementById('rev-download-btn')?.classList.add('hidden');
+  try{
+    let text='';
+    if(ext==='docx'){
+      const ab=await file.arrayBuffer();
+      revOriginalDocxBuffer=ab.slice(0);
+      revOriginalDocxName=file.name.replace(/\.docx$/i,'');
+      const r=await mammoth.extractRawText({arrayBuffer:ab.slice(0)});
+      text=r.value;
+    } else {
+      if(typeof pdfjsLib==='undefined')throw new Error('PDF 라이브러리 로드 실패');
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const ab=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+      for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const c=await pg.getTextContent();text+=c.items.map(x=>x.str).join(' ')+'\n';}
+    }
+    revText=text.trim();
+    document.getElementById('rev-parsing').classList.add('hidden');
+    document.getElementById('rev-file-loaded').classList.remove('hidden');
+    document.getElementById('rev-file-icon').textContent=ext==='pdf'?'📕':'📘';
+    document.getElementById('rev-file-name').textContent=file.name;
+    document.getElementById('rev-file-meta').textContent=`${ext.toUpperCase()} · ${(file.size/1024).toFixed(1)}KB · ${revText.length.toLocaleString()}자 추출`;
+    document.getElementById('rev-text-preview').textContent=revText.slice(0,500)+(revText.length>500?'\n...(이하 생략)':'');
+    document.getElementById('rev-analyze-btn').disabled=false;
+    document.getElementById('rev-reset-btn').classList.remove('hidden');
+  }catch(err){
+    revOriginalDocxBuffer=null; revOriginalDocxName='';
+    document.getElementById('rev-parsing').classList.add('hidden');
+    document.getElementById('rev-upzone').style.display='block';
+    alert('파일 읽기 오류: '+err.message);
+  }
+};
+
+const _resetReviewV5 = window.resetReview;
+resetReview = function(){
+  revOriginalDocxBuffer=null; revOriginalDocxName='';
+  if(typeof _resetReviewV5==='function') _resetReviewV5();
+};
+
+function wEl(xml,name){return xml.createElementNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main','w:'+name);}
+function setWAttr(el,name,value){el.setAttributeNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main','w:'+name,value);}
+function paragraphTextXml(p){
+  const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  return Array.from(p.getElementsByTagNameNS(W,'t')).map(t=>t.textContent).join('');
+}
+function normalizeForFind(text){return String(text||'').replace(/\s+/g,'').replace(/[“”‘’"']/g,'');}
+function itemPatterns(item){return INLINE_TARGET_PATTERNS[item.id] || [];}
+function findTargetParagraph(paragraphs,item){
+  const patterns=itemPatterns(item);
+  for(const re of patterns){
+    const found=paragraphs.find(p=>re.test(paragraphTextXml(p)));
+    if(found) return found;
+  }
+  // Try normalized fallback using the standard title or article number when possible.
+  const itemNameKey=normalizeForFind(item.name).slice(0,6);
+  if(itemNameKey){
+    const found=paragraphs.find(p=>normalizeForFind(paragraphTextXml(p)).includes(itemNameKey));
+    if(found) return found;
+  }
+  for(const re of INLINE_FALLBACK_PATTERNS){
+    const found=paragraphs.find(p=>re.test(paragraphTextXml(p)));
+    if(found) return found;
+  }
+  return paragraphs[paragraphs.length-1] || null;
+}
+function makeRedParagraph(xml,text,{bold=false,shade=false}={}){
+  const p=wEl(xml,'p');
+  const pPr=wEl(xml,'pPr');
+  const spacing=wEl(xml,'spacing'); setWAttr(spacing,'before','80'); setWAttr(spacing,'after','80'); setWAttr(spacing,'line','300');
+  pPr.appendChild(spacing);
+  if(shade){const shd=wEl(xml,'shd'); setWAttr(shd,'val','clear'); setWAttr(shd,'fill','FFF2CC'); pPr.appendChild(shd);}
+  p.appendChild(pPr);
+  const r=wEl(xml,'r');
+  const rPr=wEl(xml,'rPr');
+  const color=wEl(xml,'color'); setWAttr(color,'val','C00000'); rPr.appendChild(color);
+  const sz=wEl(xml,'sz'); setWAttr(sz,'val','20'); rPr.appendChild(sz);
+  const font=wEl(xml,'rFonts'); setWAttr(font,'ascii','Malgun Gothic'); setWAttr(font,'hAnsi','Malgun Gothic'); setWAttr(font,'eastAsia','맑은 고딕'); rPr.appendChild(font);
+  if(bold) rPr.appendChild(wEl(xml,'b'));
+  r.appendChild(rPr);
+  const t=wEl(xml,'t');
+  t.setAttributeNS('http://www.w3.org/XML/1998/namespace','xml:space','preserve');
+  t.textContent=text;
+  r.appendChild(t);
+  p.appendChild(r);
+  return p;
+}
+function makeCorrectionParagraphs(xml,item){
+  const label = item.status==='miss' ? '[피알원 추가 권장]' : '[피알원 수정 권장]';
+  const header = `${label} ${item.art} · ${item.name}`;
+  const desc = item.detail ? `원문 판정: ${item.detail}` : '';
+  const fix = item.fix || item.std || '';
+  const arr=[makeRedParagraph(xml,header,{bold:true,shade:true})];
+  if(desc) arr.push(makeRedParagraph(xml,desc));
+  String(fix).split('\n').filter(Boolean).forEach(line=>arr.push(makeRedParagraph(xml,line)));
+  return arr;
+}
+function insertAfter(ref,node){
+  if(!ref || !ref.parentNode) return;
+  const parent=ref.parentNode;
+  if(ref.nextSibling) parent.insertBefore(node,ref.nextSibling); else parent.appendChild(node);
+}
+async function downloadInlineRedlineDocx(){
+  if(!revOriginalDocxBuffer){return downloadReviewReportDocxFallback();}
+  if(!window.JSZip){
+    alert('원본서식 교정본 생성을 위한 JSZip 라이브러리가 아직 로딩되지 않았습니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  const selected=getSelectedReviewIds();
+  const analysis=getReviewAnalysis();
+  const selectedItems=analysis.items.filter(i=>selected.includes(i.id)&&i.status!=='ok');
+  if(!selectedItems.length && !analysis.extra.length){alert('교정본에 포함할 수정 항목이 없습니다.'); return;}
+  const zip=await JSZip.loadAsync(revOriginalDocxBuffer.slice(0));
+  const file=zip.file('word/document.xml');
+  if(!file){throw new Error('DOCX 내부 document.xml을 찾지 못했습니다.');}
+  const xmlStr=await file.async('string');
+  const parser=new DOMParser();
+  const xml=parser.parseFromString(xmlStr,'application/xml');
+  const parseError=xml.getElementsByTagName('parsererror')[0];
+  if(parseError){throw new Error('DOCX XML 파싱에 실패했습니다.');}
+  const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const paragraphs=Array.from(xml.getElementsByTagNameNS(W,'p'));
+  // Group correction items by target paragraph so multiple red comments stay together in the original flow.
+  const groups=[];
+  selectedItems.forEach(item=>{
+    const target=findTargetParagraph(paragraphs,item);
+    if(!target) return;
+    let group=groups.find(g=>g.target===target);
+    if(!group){group={target,items:[]};groups.push(group);}
+    group.items.push(item);
+  });
+  // Insert from bottom to top to avoid disturbing later anchors.
+  groups.sort((a,b)=>paragraphs.indexOf(b.target)-paragraphs.indexOf(a.target));
+  groups.forEach(group=>{
+    let ref=group.target;
+    group.items.forEach(item=>{
+      makeCorrectionParagraphs(xml,item).forEach(p=>{insertAfter(ref,p); ref=p;});
+    });
+  });
+  if(analysis.extra.length){
+    const body=xml.getElementsByTagNameNS(W,'body')[0];
+    const sectPr=body ? Array.from(body.childNodes).find(n=>n.nodeName==='w:sectPr') : null;
+    analysis.extra.forEach(e=>{
+      const p1=makeRedParagraph(xml,`[피알원 확인 필요] 추가조항 의심 · ${e.name}`,{bold:true,shade:true});
+      const p2=makeRedParagraph(xml,`${e.desc} 원문 확인 후 삭제 또는 별도 승인 필요.`);
+      if(sectPr){body.insertBefore(p1,sectPr); body.insertBefore(p2,sectPr);} else if(body){body.appendChild(p1); body.appendChild(p2);}
+    });
+  }
+  const outXml=new XMLSerializer().serializeToString(xml);
+  zip.file('word/document.xml',outXml);
+  const blob=await zip.generateAsync({type:'blob'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const base=(revOriginalDocxName||'계약서').replace(/[\\/:*?"<>|]/g,'_');
+  a.download=`${base}_피알원_빨간교정.docx`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+downloadCorrectedDocx = async function(){
+  if(!lastReviewResults.length){runChecklist();}
+  try{
+    if(revOriginalDocxBuffer){
+      await downloadInlineRedlineDocx();
+    } else {
+      await downloadReviewReportDocxFallback();
+    }
+  }catch(err){
+    console.error(err);
+    alert('원본서식 교정본 생성 중 오류가 발생해 리포트형 교정본으로 전환합니다: '+err.message);
+    if(typeof downloadReviewReportDocxFallback==='function') await downloadReviewReportDocxFallback();
+  }
+};
+</script>
+
+</body>
+</html>
