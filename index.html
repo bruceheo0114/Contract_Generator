@@ -143,7 +143,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .flex{display:flex}.gap-8{gap:8px}.gap-10{gap:10px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
 .flex-end{justify-content:flex-end}
 .hidden{display:none!important}
-@media(max-width:1050px){.gen-grid{grid-template-columns:1fr}.rev-grid{grid-template-columns:1fr}.c-sign-grid{grid-template-columns:1fr}}
+@media(max-width:1050px){.gen-grid{grid-template-columns:minmax(0,1fr)}.rev-grid{grid-template-columns:minmax(0,1fr)}.c-sign-grid{grid-template-columns:1fr}}
+ .gen-grid>*,.rev-grid>*,.fr2>*,.fr3>*{min-width:0}
+ .prev-body,.rev-result{overflow-x:auto;overflow-wrap:anywhere}
+ @media(max-width:600px){.fr2,.fr3{grid-template-columns:minmax(0,1fr)}.header,.ch,.review-actions{flex-wrap:wrap;gap:8px}.tabs{overflow-x:auto}.tab{flex-shrink:0}.wrap{padding:18px 12px 40px}.company-cover .c-title-table{width:100%}}
 @media print{.header,.tabs,.sec-head,.form-wrap,.prev-actions{display:none!important}.gen-grid{display:block!important}.preview-card{position:static!important;border:none!important;box-shadow:none!important;max-width:720px;margin:0 auto}.prev-body{max-height:none!important;padding:20px 24px!important}body{background:#fff}}
 
 /* PR ONE company-style first page */
@@ -359,7 +362,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   <div class="prev-actions">
     <span class="ct"><span class="dot"></span>계약서 미리보기</span>
     <div class="flex gap-8" style="margin-left:auto">
-      <button class="btn btn-sm btn-outline" onclick="copyPreview()">📋 텍스트 복사</button>
+      <button class="btn btn-sm btn-outline" onclick="copyPreview(this)">📋 텍스트 복사</button>
       <button class="btn btn-sm btn-outline" onclick="resetForm('content')">↺ 초기화</button>
     </div>
   </div>
@@ -506,7 +509,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <span class="ct"><span class="dot"></span>검토 결과</span>
       <div class="review-actions">
         <button class="btn btn-sm btn-green hidden" id="rev-download-btn" onclick="downloadCorrectedDocx()">원본서식 빨간 교정 DOCX</button>
-        <button class="btn btn-sm btn-outline hidden" id="rev-copy-btn" onclick="copyReview()">결과 복사</button>
+        <button class="btn btn-sm btn-outline hidden" id="rev-copy-btn" onclick="copyReview(this)">결과 복사</button>
       </div>
     </div>
     <div id="rev-result" style="padding:16px;max-height:680px;overflow-y:auto">
@@ -653,6 +656,7 @@ function syncSplit() {
 // CONTRACT PREVIEW (TAB 1)
 // ═══════════════════════════════════════════════════
 function rp() {
+  const v=id=>escapeHtml2((document.getElementById(id)?.value||'').trim());
   const date = dateStr('c_date');
   const chType = v('c_ch_type')||'유튜브';
   const isCorpV = kolType==='corp';
@@ -805,6 +809,7 @@ ${payBlock}
 // 2차 활용 PREVIEW (TAB 2)
 // ═══════════════════════════════════════════════════
 function rps() {
+  const v=id=>escapeHtml2((document.getElementById(id)?.value||'').trim());
   const date = dateStr('s_date');
   const performer = v('s_performer')||'____';
   const corp = v('s_corp')||'____';
@@ -1167,12 +1172,14 @@ async function downloadDocx(type) {
 // ═══════════════════════════════════════════════════
 // COPY / RESET
 // ═══════════════════════════════════════════════════
-function copyPreview(){
-  const el=document.getElementById('preview-content');
-  navigator.clipboard.writeText(el.innerText).then(()=>{
-    const btn=event.currentTarget;const o=btn.innerHTML;
-    btn.innerHTML='✅ 복사됨';setTimeout(()=>btn.innerHTML=o,2000);
-  });
+async function copyElementText(id,btn){
+  try{
+    await navigator.clipboard.writeText(document.getElementById(id).innerText);
+    if(btn){const original=btn.innerHTML;btn.textContent='✅ 복사됨';setTimeout(()=>btn.innerHTML=original,2000);}
+  }catch(_){alert('복사하지 못했습니다. 미리보기의 텍스트를 선택해 직접 복사해 주세요.');}
+}
+function copyPreview(btn){
+  return copyElementText('preview-content',btn);
 }
 function resetForm(t){
   document.querySelectorAll('#tab-'+t+' input, #tab-'+t+' select').forEach(el=>{
@@ -1413,19 +1420,16 @@ ${extraHtml}
   document.getElementById('rev-copy-btn').classList.remove('hidden');
 }
 
-function copyReview(){
-  const el=document.getElementById('rev-result');
-  navigator.clipboard.writeText(el.innerText).then(()=>{
-    const btn=event.currentTarget;const o=btn.innerHTML;
-    btn.innerHTML='✅ 복사됨';setTimeout(()=>btn.innerHTML=o,2000);
-  });
+function copyReview(btn){
+  return copyElementText('rev-result',btn);
 }
 
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('c_date').value=new Date().toISOString().slice(0,10);
+  const today=new Date();
+  document.getElementById('c_date').value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
   rp(); rps();
 });
 </script>
@@ -1671,6 +1675,8 @@ function setReviewDownloadButtonLabel(ext){
 processRevFile = async function(file){
   const ext=file.name.split('.').pop().toLowerCase();
   if(!['docx','pdf'].includes(ext)){alert('DOCX 또는 PDF 파일만 지원합니다.');return;}
+  resetReview();
+  lastReviewResults=[];lastExtraResults=[];
   revOriginalDocxBuffer = null;
   revOriginalDocxName = '';
   setReviewDownloadButtonLabel(ext);
